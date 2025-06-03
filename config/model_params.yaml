@@ -1,0 +1,87 @@
+model_params:
+  model_metadata:
+    name: "NASDAQ_Price_Predictor"
+    description: "Modèle LSTM pour prédiction du cours de clôture NASDAQ."
+    version: "1.0.0"
+    author: "TonNom"
+    created_on: "2025-06-02"
+
+  data:
+    input_features:
+      - open
+      - high
+      - low
+      - close
+      - volume
+      - adjusted_close
+      - RSI
+      - MACD
+      - Bollinger_Bands_upper
+      - Bollinger_Bands_lower
+      - sentiment_score
+      - moving_average_50
+      - moving_average_200
+    target_feature: "next_day_close"
+    feature_engineering:
+      apply_technical_indicators: true
+      normalize_features: true
+      normalization_method: "z_score"  # options: minmax, z_score, robust
+      imputation_strategy: "median"  # options: mean, median, most_frequent
+
+  model:
+    architecture: "LSTM"
+    layers:
+      - type: "LSTM"
+        units: 128
+        activation: "tanh"
+        return_sequences: true
+        dropout: 0.2
+      - type: "LSTM"
+        units: 64
+        activation: "tanh"
+        return_sequences: false
+        dropout: 0.2
+      - type: "Dense"
+        units: 1
+        activation: "linear"
+    loss_function: "mean_squared_error"
+    optimizer:
+      type: "adam"
+      learning_rate: 0.001
+      weight_decay: 0.0001
+    metrics:
+      - "mean_absolute_error"
+      - "mean_squared_error"
+
+  training:
+    batch_size: 64
+    epochs: 150
+    validation_split: 0.2
+    shuffle: true
+    callbacks:
+      early_stopping:
+        enabled: true
+        monitor: "val_loss"
+        patience: 15
+        restore_best_weights: true
+      model_checkpoint:
+        enabled: true
+        filepath: "checkpoints/best_model.h5"
+        monitor: "val_loss"
+        save_best_only: true
+      tensorboard:
+        enabled: true
+        log_dir: "logs/fit"
+    seed: 42
+
+  evaluation:
+    test_set_ratio: 0.1
+    evaluation_metrics:
+      - "R2"
+      - "RMSE"
+      - "MAE"
+
+  deployment:
+    export_format: "ONNX"
+    versioning_enabled: true
+    monitoring_enabled: true

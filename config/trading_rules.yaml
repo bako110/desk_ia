@@ -1,0 +1,83 @@
+trading_rules:
+  general:
+    trading_universe:
+      - "NASDAQ"
+    trading_hours:
+      start: "09:30"
+      end: "16:00"
+    timezone: "America/New_York"
+    max_open_positions: 5
+    max_daily_trades: 10
+    risk_per_trade: 0.02  # 2% du capital total
+
+  indicators:
+    RSI:
+      period: 14
+      oversold_threshold: 30
+      overbought_threshold: 70
+    MACD:
+      fast_period: 12
+      slow_period: 26
+      signal_period: 9
+    Bollinger_Bands:
+      period: 20
+      std_dev: 2
+    ATR:
+      period: 14
+
+  entry_rules:
+    - name: "RSI_oversold_buy"
+      condition:
+        indicator: "RSI"
+        operator: "<"
+        value: 30
+      action: "enter_long"
+      position_size: "calculate_position_size"
+      stop_loss:
+        method: "ATR"
+        multiplier: 1.5
+      take_profit:
+        method: "risk_reward_ratio"
+        ratio: 2
+
+    - name: "MACD_bullish_crossover"
+      condition:
+        indicator: "MACD"
+        signal: "cross_up"
+      action: "enter_long"
+      position_size: "fixed"
+      size: 100
+
+  exit_rules:
+    - name: "RSI_overbought_sell"
+      condition:
+        indicator: "RSI"
+        operator: ">"
+        value: 70
+      action: "exit_long"
+
+    - name: "trailing_stop_exit"
+      condition:
+        trailing_stop_hit: true
+      action: "exit_long"
+
+  risk_management:
+    max_drawdown: 0.1  # 10% drawdown max
+    max_daily_loss: 0.05
+    max_position_risk: 0.02
+    position_sizing:
+      method: "fixed_fractional"
+      fraction: 0.02
+
+  notifications:
+    enable_email: true
+    email_recipients:
+      - "trader@exemple.com"
+    enable_sms: false
+    enable_push_notifications: true
+
+  logging:
+    log_trades: true
+    log_trades_path: "logs/trades.log"
+    log_errors: true
+    log_errors_path: "logs/errors.log"

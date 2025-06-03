@@ -1,0 +1,132 @@
+# config/data_sources.yaml
+nasdaq_data_collection:
+  description: "Sources et types de données à collecter pour NASDAQ"
+
+  market_data:
+    ohlcv:
+      description: "Prix OHLCV toutes granularités"
+      sources:
+        - alphavantage
+        - polygon
+        - iexcloud
+        - finnhub
+      granularities:
+        - "1s"
+        - "5s"
+        - "15s"
+        - "30s"
+        - "1min"
+        - "5min"
+        - "15min"
+        - "30min"
+        - "1h"
+        - "2h"
+        - "4h"
+        - "1d"
+        - "1w"
+        - "1mo"
+      extended_prices:
+        - pre_market
+        - after_hours
+        - vwap
+        - twap
+        - typical_price
+        - median_price
+    tick_data:
+      description: "Tick par tick avec bid/ask/size"
+      sources:
+        - polygon
+        - iexcloud
+    indicators:
+      description: "Calcul et récupération des indicateurs techniques"
+      types:
+        - sma
+        - ema
+        - wma
+        - rsi
+        - macd
+        - bollinger_bands
+        # … tous les indicateurs listés
+      sources:
+        - finnhub
+        - estimize
+  fundamentals:
+    financial_statements:
+      sources:
+        - quandl
+        - finnhub
+        - bloomberg
+    ratios:
+      sources:
+        - finnhub
+        - iexcloud
+  sentiment:
+    news:
+      sources:
+        - social_market_analytics
+        - bloomberg_news
+    social_media:
+      sources:
+        - twitter
+        - reddit
+        - stocktwits
+    indices:
+      sources:
+        - fear_greed_index
+        - vix_index
+  volume_flow:
+    order_book:
+      sources:
+        - polygon
+        - iexcloud
+    institutional_flow:
+      sources:
+        - finnhub
+        - thinknum
+    options_flow:
+      sources:
+        - finnhub
+        - iexcloud
+  macro:
+    economic_indicators:
+      sources:
+        - fred
+        - bloomberg
+        - refinitiv
+    monetary_policy:
+      sources:
+        - fred
+        - bloomberg
+  alternative_data:
+    satellite:
+      sources:
+        - satellite_logic
+    web_data:
+      sources:
+        - thinknum
+        - glassdoor
+    esg_scores:
+      sources:
+        - refinitiv
+  real_time_data:
+    microstructure:
+      sources:
+        - polygon
+        - iexcloud
+    breaking_news:
+      sources:
+        - social_market_analytics
+  specialized_nasdaq:
+    sources:
+      - polygon
+      - finnhub
+  collection_frequency:
+    realtime: ["tick_data", "order_book", "breaking_news"]
+    high_frequency: ["ohlcv", "indicators", "volume_flow"]
+    standard: ["sentiment", "options_flow"]
+    daily: ["fundamentals", "macro"]
+    weekly_monthly: ["economic_releases", "earnings_reports", "regulatory_filings"]
+  priority:
+    1: ["ohlcv", "volume_flow", "fundamentals", "sentiment", "macro"]
+    2: ["options_flow", "institutional_flow", "alternative_data", "correlations", "order_book"]
+    3: ["satellite_data", "patent_filings", "esg_scores", "high_frequency_microstructure"]

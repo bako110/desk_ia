@@ -1,0 +1,17 @@
+pandas
+numpy
+requests
+yfinance
+alpha_vantage
+polygon-api-client
+iexfinance
+finnhub-python
+quandl
+tweepy
+praw
+fredapi
+scipy
+matplotlib
+scikit-learn
+statsmodels
+TA-Lib
