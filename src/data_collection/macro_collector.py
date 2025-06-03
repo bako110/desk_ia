@@ -13,25 +13,31 @@ import yaml
 import asyncio
 import aiohttp
 import json
+from pathlib import Path
 
 class MacroCollector:
     """Collecteur de données macro-économiques - Récupération uniquement"""
-    
-    def __init__(self, config_file: str = "config/apikey.yaml"):
-        try:
-            with open(config_file, 'r') as f:
-                config = yaml.safe_load(f)
-        except FileNotFoundError:
+    def __init__(self, config_file: Path = None):
+        # Définit le chemin du fichier de configuration par défaut
+        if config_file is None:
+            # Chemin absolu du fichier 'config/apikey.yaml' basé sur la racine du projet
+            base_dir = Path(__file__).resolve().parent.parent.parent  # remonte jusqu'à 'desk_ia'
+            config_file = base_dir / "config" / "apikeys.yaml"
+
+        if not config_file.exists():
             raise FileNotFoundError(f"Fichier de configuration {config_file} non trouvé")
-        
-        self.macro_apis = config['macro_apis']
-        self.rate_limits = config['rate_limits']
-        
+
+        with open(config_file, 'r', encoding='utf-8') as f:
+            config = yaml.safe_load(f)
+
+        self.macro_apis = config.get('macro_apis', {})
+        self.rate_limits = config.get('rate_limits', {})
+
         # Configuration du logging
         logging.basicConfig(level=logging.INFO)
         self.logger = logging.getLogger(__name__)
         self.request_times = {}
-        
+
         # Indicateurs macro principaux FRED
         self.fred_indicators = {
             "gdp": "GDP",
@@ -86,7 +92,7 @@ class MacroCollector:
             "mortgage_30y": "MORTGAGE30US",
             "mortgage_15y": "MORTGAGE15US"
         }
-    
+
     async def _rate_limit_wait(self, api_name: str):
         """Gestion du rate limiting"""
         current_time = time.time()

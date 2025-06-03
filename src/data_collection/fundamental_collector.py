@@ -11,8 +11,17 @@ from .base_collector import BaseCollector, APIConfig
 class FundamentalCollector(BaseCollector):
     """Collecteur de données fondamentales"""
     
-    def __init__(self, api_config: APIConfig):
+    def __init__(self, api_config: APIConfig, data_path: str = "data/fundamental_data"):
+        """
+        Initialise le collecteur de données fondamentales
+        
+        Args:
+            api_config: Configuration des clés API
+            data_path: Chemin pour sauvegarder les données
+        """
         super().__init__(api_config)
+        self.data_path = data_path
+        self.logger.info(f"FundamentalCollector initialisé avec chemin: {data_path}")
         
     def collect_data(self, symbols: List[str]) -> pd.DataFrame:
         """Collecte des données fondamentales"""

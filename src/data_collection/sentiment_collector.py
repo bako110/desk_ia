@@ -1,56 +1,62 @@
 # =============================================================================
 # SENTIMENT COLLECTOR - NASDAQ IA TRADING
 # =============================================================================
-
-import requests
-import pandas as pd
-import numpy as np
-from datetime import datetime, timedelta
-import time
-import logging
-from typing import Dict, List, Optional, Any
+from pathlib import Path
 import yaml
+import logging
+import time
 import asyncio
 import aiohttp
+from datetime import datetime, timedelta
+from typing import List, Dict
+import numpy as np
 from textblob import TextBlob
 import json
 
+
+
 class SentimentCollector:
     """Collecteur de données de sentiment et d'actualités financières"""
-    
-    def __init__(self, config_file: str = "config.yaml"):
-        with open(config_file, 'r') as f:
+
+    def __init__(self, data_folder: Path):
+        self.data_folder = data_folder
+        self.config_path = self.data_folder / "api_keys.yaml"
+
+        if not self.config_path.exists():
+            raise FileNotFoundError(f"Config file not found: {self.config_path}")
+
+        with open(self.config_path, 'r', encoding='utf-8') as f:
             config = yaml.safe_load(f)
-        
-        self.sentiment_apis = config['sentiment_apis']
-        self.rate_limits = config['rate_limits']
+
+        self.sentiment_apis = config.get('sentiment_apis', {})
+        self.rate_limits = config.get('rate_limits', {})
         self.logger = logging.getLogger(__name__)
         self.request_times = {}
-    
+        
     async def _rate_limit_wait(self, api_name: str):
         """Gestion du rate limiting"""
         current_time = time.time()
         if api_name not in self.request_times:
             self.request_times[api_name] = []
-        
+
         # Nettoyer les anciennes requêtes (> 1 minute)
         self.request_times[api_name] = [
             req_time for req_time in self.request_times[api_name]
             if current_time - req_time < 60
         ]
-        
+
         # Vérifier limite
         if len(self.request_times[api_name]) >= self.rate_limits.get(api_name, 60):
             sleep_time = 60 - (current_time - self.request_times[api_name][0])
             if sleep_time > 0:
                 await asyncio.sleep(sleep_time)
-        
+
         self.request_times[api_name].append(current_time)
-    
+
     async def _make_request(self, url: str, params: dict, api_name: str) -> dict:
         """Faire une requête HTTP avec gestion d'erreurs"""
         await self._rate_limit_wait(api_name)
-        
+
         async with aiohttp.ClientSession() as session:
             try:
                 async with session.get(url, params=params, timeout=30) as response:
