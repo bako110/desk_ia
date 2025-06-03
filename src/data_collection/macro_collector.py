@@ -14,7 +14,7 @@ import asyncio
 import aiohttp
 import json
 
-class MacroDataCollector:
+class MacroCollector:
     """Collecteur de données macro-économiques - Récupération uniquement"""
     
     def __init__(self, config_file: str = "config/apikey.yaml"):

@@ -32,7 +32,7 @@ logging.basicConfig(
 )
 logger = logging.getLogger('OptionsCollector')
 
-class OptionsDataCollector:
+class OptionsCollector:
     """Collecteur spécialisé pour les données d'options"""
     
     def __init__(self):

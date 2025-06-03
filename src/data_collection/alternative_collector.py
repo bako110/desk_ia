@@ -35,7 +35,7 @@ logging.basicConfig(
 )
 logger = logging.getLogger('AlternativeCollector')
 
-class AlternativeDataCollector:
+class AlternativeCollector:
     """Collecteur spécialisé pour les données alternatives"""
     
     def __init__(self):
