@@ -1,45 +1,26 @@
-# =============================================================================
-# CONFIGURATION DES CLÉS API - NASDAQ IA TRADING
-# =============================================================================
 
-# APIs pour données de prix
 price_apis:
-  alphavantage: "RU6W0PWAUZ0JYD0A"
+  alpha_vantage: "RU6W0PWAUZ0JYD0A"
   polygon: "6_TgTH0XU8AdgToOqMqfrEsE4PkwRJda"
   finnhub: "d0ng2fpr01qi1cve64bgd0ng2fpr01qi1cve64c0"
-  yahoo_finance: "TONE_KEY_YAHOO_FINANCE_ICI"  # Gratuit, pas de clé nécessaire
-  iexcloud: "TONE_KEY_IEXCLOUD_ICI"
+  yahoo_finance: ""
 
-# APIs pour données fondamentales
 fundamental_apis:
-  alphavantage: "RU6W0PWAUZ0JYD0A"
+  alpha_vantage: "RU6W0PWAUZ0JYD0A"
   finnhub: "d0ng2fpr01qi1cve64bgd0ng2fpr01qi1cve64c0"
-  yahoo_finance: "TONE_KEY_YAHOO_FINANCE_ICI"
-  bloomberg: "TONE_KEY_BLOOMBERG_ICI"
-  refinitiv: "TONE_KEY_REFINITIV_ICI"
 
-# APIs pour sentiment et news
+
 sentiment_apis:
-  alphavantage: "RU6W0PWAUZ0JYD0A"
+  alpha_vantage: "RU6W0PWAUZ0JYD0A"
   finnhub: "d0ng2fpr01qi1cve64bgd0ng2fpr01qi1cve64c0"
-  social_market_analytics: "TONE_KEY_SMA_ICI"
-  estimize: "TONE_KEY_ESTIMIZE_ICI"
 
-# APIs pour données macro-économiques
 macro_apis:
   fred: "5ab3bfadeb631202a8dad2a52fd01821"
   quandl: "CchiUoMKN9thkVHWm_pd"
-  bloomberg: "TONE_KEY_BLOOMBERG_ICI"
 
-# APIs pour données alternatives
-alternative_apis:
-  thinknum: "TONE_KEY_THINKNUM_ICI"
-  satellite_logic: "TONE_KEY_SATELLITE_LOGIC_ICI"
-
-# Rate limiting (requests per minute)
 rate_limits:
-  alphavantage: 5
+  alpha_vantage: 5
   polygon: 100
   finnhub: 60
   fred: 120
-  yahoo_finance: 1000  # Pas de limite stricte
+  yahoo_finance: 1000

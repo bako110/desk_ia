@@ -49,16 +49,25 @@ class CollectorManager:
     def _create_default_config(self):
         """Crée un fichier de configuration par défaut avec des clés API vides"""
         default_config = {
-            'api_keys': {
-                'alpha_vantage': 'YOUR_ALPHA_VANTAGE_API_KEY',
-                'yahoo_finance': 'YOUR_YAHOO_FINANCE_API_KEY',
-                'polygon': 'YOUR_POLYGON_API_KEY',
-                'iex_cloud': 'YOUR_IEX_CLOUD_API_KEY',
-                'quandl': 'YOUR_QUANDL_API_KEY',
-                'twitter': 'YOUR_TWITTER_API_KEY',
-                'reddit': 'YOUR_REDDIT_API_KEY',
-                'news_api': 'YOUR_NEWS_API_KEY'
-            },
+'api_keys': {
+    'alpha_vantage': 'RU6W0PWAUZ0JYD0A',
+    'yahoo_finance': 'TONE_KEY_YAHOO_FINANCE_ICI',
+    'polygon': '6_TgTH0XU8AdgToOqMqfrEsE4PkwRJda',
+    'iex_cloud': 'TONE_KEY_IEXCLOUD_ICI',
+    'quandl': 'CchiUoMKN9thkVHWm_pd',
+    'twitter': 'YOUR_TWITTER_API_KEY',
+    'reddit': 'YOUR_REDDIT_API_KEY',
+    'news_api': 'YOUR_NEWS_API_KEY',
+    'finnhub': 'd0ng2fpr01qi1cve64bgd0ng2fpr01qi1cve64c0',
+    'bloomberg': 'TONE_KEY_BLOOMBERG_ICI',
+    'refinitiv': 'TONE_KEY_REFINITIV_ICI',
+    'social_market_analytics': 'TONE_KEY_SMA_ICI',
+    'estimize': 'TONE_KEY_ESTIMIZE_ICI',
+    'fred': '5ab3bfadeb631202a8dad2a52fd01821',
+    'thinknum': 'TONE_KEY_THINKNUM_ICI',
+    'satellite_logic': 'TONE_KEY_SATELLITE_LOGIC_ICI'
+},
+
             'settings': {
                 'timeout': 30,
                 'retry_count': 3,
@@ -77,10 +86,16 @@ class CollectorManager:
         # Créer les dossiers de données s'ils n'existent pas
         self.base_path.mkdir(parents=True, exist_ok=True)
         
-        # passe config à tous les collecteurs
+        # Passer les paramètres dans le bon ordre : data_path d'abord, config ensuite
         try:
             self.price_collector = PriceCollector(self.base_path / "price_data", self.config)
-            self.fundamental_collector = FundamentalCollector(self.base_path / "fundamental", self.config)
+            
+            # CORRECTION: Passer data_path et config séparément
+            self.fundamental_collector = FundamentalCollector(
+                data_path=str(self.base_path / "fundamental"), 
+                config=self.config
+            )
+            
             self.sentiment_collector = SentimentCollector(self.config)
             self.macro_collector = MacroCollector(self.base_path / "macro", self.config)
             self.volume_collector = VolumeCollector(self.base_path / "volume_flow", self.config)
