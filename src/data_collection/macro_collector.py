@@ -8,7 +8,7 @@ import numpy as np
 from datetime import datetime, timedelta
 import time
 import logging
-from typing import Dict, List, Optional, Any
+from typing import Dict, List, Optional, Any, Union
 import yaml
 import asyncio
 import aiohttp
@@ -17,26 +17,51 @@ from pathlib import Path
 
 class MacroCollector:
     """Collecteur de données macro-économiques - Récupération uniquement"""
-    def __init__(self, config_file: Path = None):
-        # Définit le chemin du fichier de configuration par défaut
-        if config_file is None:
-            # Chemin absolu du fichier 'config/apikey.yaml' basé sur la racine du projet
-            base_dir = Path(__file__).resolve().parent.parent.parent  # remonte jusqu'à 'desk_ia'
-            config_file = base_dir / "config" / "apikeys.yaml"
-
-        if not config_file.exists():
-            raise FileNotFoundError(f"Fichier de configuration {config_file} non trouvé")
-
-        with open(config_file, 'r', encoding='utf-8') as f:
-            config = yaml.safe_load(f)
-
-        self.macro_apis = config.get('macro_apis', {})
-        self.rate_limits = config.get('rate_limits', {})
-
+    
+    def __init__(self, config: Union[dict, str, Path] = None, data_folder: Path = None):
+        """
+        Initialise le collecteur de données macro-économiques
+        
+        Args:
+            config: Configuration avec les clés API (dict) ou chemin vers fichier config (str/Path)
+            data_folder: Dossier de données (optionnel, pour compatibilité)
+        """
         # Configuration du logging
         logging.basicConfig(level=logging.INFO)
         self.logger = logging.getLogger(__name__)
+        
+        # Initialiser les variables
+        self.macro_apis = {}
+        self.rate_limits = {}
+        
+        # Traiter la configuration
+        if config is None:
+            # Essayer de charger depuis le fichier de configuration par défaut
+            base_dir = Path(__file__).resolve().parent.parent.parent  # remonte jusqu'à 'desk_ia'
+            config_file = base_dir / "config" / "apikeys.yaml"
+            self._load_config_from_file(config_file)
+        elif isinstance(config, dict):
+            # Utiliser la configuration fournie directement
+            self.macro_apis = config.get('macro_apis', {})
+            self.rate_limits = config.get('rate_limits', {})
+        elif isinstance(config, (str, Path)):
+            # Charger depuis le fichier spécifié
+            config_file = Path(config)
+            self._load_config_from_file(config_file)
+        else:
+            self.logger.error(f"Type de config non supporté: {type(config)}")
+            self.macro_apis = {}
+            self.rate_limits = {}
+
+        self.data_folder = data_folder or Path("data")
         self.request_times = {}
+
+        # Log des APIs disponibles
+        available_apis = []
+        if self.macro_apis.get('fred'):
+            available_apis.append('FRED')
+        
+        self.logger.info(f"MacroCollector initialisé avec APIs: {', '.join(available_apis) if available_apis else 'Aucune'}")
 
         # Indicateurs macro principaux FRED
         self.fred_indicators = {
@@ -93,6 +118,30 @@ class MacroCollector:
             "mortgage_15y": "MORTGAGE15US"
         }
 
+    def _load_config_from_file(self, config_file: Path):
+        """Charger la configuration depuis un fichier"""
+        if config_file.exists():
+            try:
+                with open(config_file, 'r', encoding='utf-8') as f:
+                    file_config = yaml.safe_load(f)
+                
+                if isinstance(file_config, dict):
+                    self.macro_apis = file_config.get('macro_apis', {})
+                    self.rate_limits = file_config.get('rate_limits', {})
+                    self.logger.info(f"Configuration chargée depuis: {config_file}")
+                else:
+                    self.logger.warning(f"Format de config invalide dans {config_file}")
+                    self.macro_apis = {}
+                    self.rate_limits = {}
+            except Exception as e:
+                self.logger.warning(f"Erreur lecture config {config_file}: {e}")
+                self.macro_apis = {}
+                self.rate_limits = {}
+        else:
+            self.logger.warning(f"Fichier de config non trouvé: {config_file}")
+            self.macro_apis = {}
+            self.rate_limits = {}
+
     async def _rate_limit_wait(self, api_name: str):
         """Gestion du rate limiting"""
         current_time = time.time()
@@ -125,17 +174,21 @@ class MacroCollector:
                         return await response.json()
                     else:
                         self.logger.error(f"Erreur API {api_name}: Status {response.status}")
-                        return {}
+                        return {"error": f"HTTP {response.status}"}
             except asyncio.TimeoutError:
                 self.logger.error(f"Timeout pour {api_name}")
-                return {}
+                return {"error": "Request timeout"}
             except Exception as e:
                 self.logger.error(f"Erreur requête {api_name}: {str(e)}")
-                return {}
+                return {"error": str(e)}
     
     async def get_fred_data(self, series_id: str, limit: int = 1000, 
                            start_date: str = None, end_date: str = None) -> pd.DataFrame:
         """Obtenir données FRED (Federal Reserve Economic Data)"""
+        if not self.macro_apis.get('fred'):
+            self.logger.error("Clé API FRED non disponible")
+            return pd.DataFrame()
+            
         url = "https://api.stlouisfed.org/fred/series/observations"
         
         params = {
@@ -152,6 +205,10 @@ class MacroCollector:
         
         data = await self._make_request(url, params, "fred")
         
+        if "error" in data:
+            self.logger.error(f"Erreur FRED pour {series_id}: {data['error']}")
+            return pd.DataFrame()
+        
         if "observations" in data:
             df = pd.DataFrame(data["observations"])
             if not df.empty:
@@ -166,6 +223,9 @@ class MacroCollector:
     
     async def get_fred_series_info(self, series_id: str) -> dict:
         """Obtenir informations sur une série FRED"""
+        if not self.macro_apis.get('fred'):
+            return {"error": "Clé API FRED non disponible"}
+            
         url = "https://api.stlouisfed.org/fred/series"
         params = {
             "series_id": series_id,
@@ -175,9 +235,12 @@ class MacroCollector:
         
         data = await self._make_request(url, params, "fred")
         
+        if "error" in data:
+            return data
+        
         if "seriess" in data and data["seriess"]:
             return data["seriess"][0]
-        return {}
+        return {"error": "Aucune information trouvée"}
     
     async def get_single_indicator(self, indicator_name: str, lookback_years: int = 5) -> pd.DataFrame:
         """Récupérer un seul indicateur par son nom"""
@@ -309,11 +372,55 @@ class MacroCollector:
             "description": f"Série FRED: {self.fred_indicators[indicator_name]}"
         }
 
+    def collect(self, indicators: List[str] = None, lookback_years: int = 5):
+        """Méthode principale de collecte synchrone - interface commune"""
+        if indicators is None:
+            # Collecter les indicateurs principaux par défaut
+            indicators = [
+                "gdp_growth", "unemployment_rate", "inflation_cpi", 
+                "federal_funds_rate", "10y_treasury", "vix"
+            ]
+        
+        # Exécuter la collecte asynchrone
+        return asyncio.run(self.get_multiple_indicators(indicators, lookback_years))
+
+    def export_macro_data(self, data: dict, filename: str = None) -> str:
+        """Exporter les données macro-économiques"""
+        if filename is None:
+            filename = f"macro_data_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
+        
+        # Créer le dossier si nécessaire
+        filepath = self.data_folder / filename
+        filepath.parent.mkdir(parents=True, exist_ok=True)
+        
+        try:
+            # Convertir les DataFrames en format sérialisable
+            serializable_data = {}
+            for key, df in data.items():
+                if isinstance(df, pd.DataFrame):
+                    serializable_data[key] = {
+                        "data": df.to_dict('records'),
+                        "index": df.index.strftime('%Y-%m-%d').tolist() if hasattr(df.index, 'strftime') else df.index.tolist(),
+                        "columns": df.columns.tolist()
+                    }
+                else:
+                    serializable_data[key] = df
+            
+            with open(filepath, 'w', encoding='utf-8') as f:
+                json.dump(serializable_data, f, indent=2, ensure_ascii=False, default=str)
+            
+            self.logger.info(f"Données macro exportées vers: {filepath}")
+            return str(filepath)
+            
+        except Exception as e:
+            self.logger.error(f"Erreur export données macro: {e}")
+            return ""
+
 # Exemple d'utilisation
 async def main():
     """Fonction principale d'exemple"""
     # Créer le collecteur
-    collector = MacroDataCollector()
+    collector = MacroCollector()
     
     # Lister les indicateurs disponibles
     print("Indicateurs disponibles:")
@@ -337,3 +444,6 @@ async def main():
     collector.save_data_to_excel(data, "macro_data_sample.xlsx")
     
     print("\nDonnées sauvegardées avec succès!")
+
+if __name__ == "__main__":
+    asyncio.run(main())

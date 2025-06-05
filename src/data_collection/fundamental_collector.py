@@ -6,7 +6,7 @@ import pandas as pd
 import yfinance as yf
 from datetime import datetime
 from typing import List
-from .base_collector import BaseCollector, APIConfig
+from .base_collector import BaseCollector
 
 class FundamentalCollector(BaseCollector):
     """Collecteur de données fondamentales"""
@@ -19,22 +19,22 @@ class FundamentalCollector(BaseCollector):
             data_path: Chemin pour sauvegarder les données
             config: Configuration complète avec les clés API
         """
-        # Créer l'objet APIConfig à partir de la configuration
-        if config:
-            api_config = APIConfig(
-                alpha_vantage=config.get('fundamental_apis', {}).get('alpha_vantage', ''),
-                finnhub=config.get('fundamental_apis', {}).get('finnhub', ''),
-                yahoo_finance="",  # Yahoo Finance ne nécessite pas de clé
-                bloomberg="",      # Pas de clé disponible - désactivé
-                refinitiv=""       # Pas de clé disponible - désactivé
-            )
-        else:
-            api_config = APIConfig()
-            
-        super().__init__(api_config)
+        # Initialiser le parent avec la config complète
+        super().__init__(config)
         self.data_path = data_path
         self.config = config
         self.logger.info(f"FundamentalCollector initialisé avec chemin: {data_path}")
+        
+        # Extraire les clés API spécifiques depuis la config
+        if config and 'api_keys' in config:
+            api_keys = config['api_keys']
+            self.alpha_vantage_key = api_keys.get('alpha_vantage', '')
+            self.finnhub_key = api_keys.get('finnhub', '')
+            self.yahoo_key = api_keys.get('yahoo_finance', '')  # Pas nécessaire mais pour cohérence
+        else:
+            self.alpha_vantage_key = ''
+            self.finnhub_key = ''
+            self.yahoo_key = ''
         
     def collect_data(self, symbols: List[str]) -> pd.DataFrame:
         """Collecte des données fondamentales"""
@@ -52,7 +52,7 @@ class FundamentalCollector(BaseCollector):
                 self.logger.warning(f"Erreur fondamentaux Yahoo {symbol}: {e}")
             
             # Alpha Vantage pour données détaillées (clé disponible)
-            if self.api_config.alpha_vantage:
+            if self.alpha_vantage_key:
                 try:
                     data = self._collect_alphavantage_fundamentals(symbol)
                     if not data.empty:
@@ -61,7 +61,7 @@ class FundamentalCollector(BaseCollector):
                     self.logger.warning(f"Erreur fondamentaux AlphaVantage {symbol}: {e}")
             
             # Finnhub pour métriques financières (clé disponible)
-            if self.api_config.finnhub:
+            if self.finnhub_key:
                 try:
                     data = self._collect_finnhub_fundamentals(symbol)
                     if not data.empty:
@@ -135,12 +135,12 @@ class FundamentalCollector(BaseCollector):
             return pd.DataFrame()
     
     def _collect_alphavantage_fundamentals(self, symbol: str) -> pd.DataFrame:
-        """Fondamentaux via Alpha Vantage (clé: RU6W0PWAUZ0JYD0A)"""
+        """Fondamentaux via Alpha Vantage"""
         url = "https://www.alphavantage.co/query"
         params = {
             'function': 'OVERVIEW',
             'symbol': symbol,
-            'apikey': self.api_config.alpha_vantage
+            'apikey': self.alpha_vantage_key
         }
         
         try:
@@ -198,12 +198,12 @@ class FundamentalCollector(BaseCollector):
             return pd.DataFrame()
     
     def _collect_finnhub_fundamentals(self, symbol: str) -> pd.DataFrame:
-        """Fondamentaux via Finnhub (clé: d0ng2fpr01qi1cve64bgd0ng2fpr01qi1cve64c0)"""
+        """Fondamentaux via Finnhub"""
         url = f"https://finnhub.io/api/v1/stock/metric"
         params = {
             'symbol': symbol,
             'metric': 'all',
-            'token': self.api_config.finnhub
+            'token': self.finnhub_key
         }
         
         try:
@@ -256,7 +256,7 @@ class FundamentalCollector(BaseCollector):
     
     def collect_earnings_data(self, symbols: List[str]) -> pd.DataFrame:
         """Collecte des données de résultats trimestriels via Finnhub"""
-        if not self.api_config.finnhub:
+        if not self.finnhub_key:
             self.logger.warning("Clé Finnhub non disponible pour la collecte des résultats")
             return pd.DataFrame()
             
@@ -270,7 +270,7 @@ class FundamentalCollector(BaseCollector):
                 url = f"https://finnhub.io/api/v1/stock/earnings"
                 params = {
                     'symbol': symbol,
-                    'token': self.api_config.finnhub
+                    'token': self.finnhub_key
                 }
                 
                 response = self.session.get(url, params=params)
@@ -334,7 +334,16 @@ class FundamentalCollector(BaseCollector):
             symbols = ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'TSLA', 'META', 'NVDA', 'NFLX', 'ADBE', 'CRM']
         
         self.logger.info(f"Début de la collecte des données fondamentales pour {len(symbols)} symboles")
-        self.logger.info(f"APIs disponibles: Yahoo Finance (gratuit), Alpha Vantage ✓, Finnhub ✓")
+        
+        # Log des APIs disponibles
+        apis_available = []
+        if self.alpha_vantage_key:
+            apis_available.append("Alpha Vantage ✓")
+        if self.finnhub_key:
+            apis_available.append("Finnhub ✓")
+        apis_available.append("Yahoo Finance (gratuit)")
+        
+        self.logger.info(f"APIs disponibles: {', '.join(apis_available)}")
         
         # Collecte des données fondamentales
         fundamental_data = self.collect_data(symbols)
