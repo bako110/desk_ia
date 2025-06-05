@@ -38,9 +38,25 @@ logger = logging.getLogger('AlternativeCollector')
 class AlternativeCollector:
     """Collecteur spécialisé pour les données alternatives"""
     
-    def __init__(self):
-        self.data_path = Path(os.environ.get('DATA_PATH', '/app/data/alternative'))
-        self.symbols = os.environ.get('SYMBOLS', 'AAPL,GOOGL,MSFT,TSLA,NVDA').split(',')
+    def __init__(self, symbols=None, data_path=None):
+        """
+        Initialise le collecteur de données alternatives
+        
+        Args:
+            symbols (list): Liste des symboles à collecter (optionnel)
+            data_path (str): Chemin des données (optionnel)
+        """
+        # Configuration des symboles
+        if symbols:
+            self.symbols = symbols if isinstance(symbols, list) else symbols.split(',')
+        else:
+            self.symbols = os.environ.get('SYMBOLS', 'AAPL,GOOGL,MSFT,TSLA,NVDA').split(',')
+        
+        # Configuration du chemin des données
+        if data_path:
+            self.data_path = Path(data_path)
+        else:
+            self.data_path = Path(os.environ.get('DATA_PATH', '/app/data/alternative'))
 
         # Charger les clés API depuis le fichier YAML
         self.api_keys = self._load_api_keys('config.api_key.yaml')
@@ -57,11 +73,24 @@ class AlternativeCollector:
         self._initialize_clients()
     
     def _load_api_keys(self, yaml_path):
+        """Charge les clés API depuis le fichier YAML"""
         try:
-            with open(yaml_path, 'r') as f:
-                keys = yaml.safe_load(f)
-            logger.info(f"🔑 Clés API chargées depuis {yaml_path}")
-            return keys
+            if os.path.exists(yaml_path):
+                with open(yaml_path, 'r') as f:
+                    keys = yaml.safe_load(f)
+                logger.info(f"🔑 Clés API chargées depuis {yaml_path}")
+                return keys
+            else:
+                logger.warning(f"⚠️ Fichier {yaml_path} non trouvé, utilisation des variables d'environnement")
+                # Fallback sur les variables d'environnement
+                return {
+                    'finnhub': os.environ.get('FINNHUB_API_KEY'),
+                    'alphavantage': os.environ.get('ALPHAVANTAGE_API_KEY'),
+                    'reddit': {
+                        'client_id': os.environ.get('REDDIT_CLIENT_ID'),
+                        'client_secret': os.environ.get('REDDIT_CLIENT_SECRET')
+                    }
+                }
         except Exception as e:
             logger.error(f"❌ Erreur chargement clés API depuis {yaml_path}: {e}")
             return {}
@@ -97,13 +126,16 @@ class AlternativeCollector:
             # Finnhub client pour news et sentiment
             if self.api_keys.get('finnhub'):
                 self.finnhub_client = finnhub.Client(api_key=self.api_keys['finnhub'])
+                logger.info("✅ Client Finnhub initialisé")
             else:
                 self.finnhub_client = None
+                logger.warning("⚠️ Clé API Finnhub manquante")
             
             logger.info("🔌 Clients API alternatifs initialisés")
             
         except Exception as e:
             logger.error(f"❌ Erreur initialisation clients: {e}")
+            self.finnhub_client = None
     
     def collect_news_sentiment(self):
         """Collecte les news et analyse du sentiment"""
@@ -158,6 +190,7 @@ class AlternativeCollector:
         """Récupère les news depuis Finnhub"""
         try:
             if not self.finnhub_client:
+                logger.warning(f"⚠️ Client Finnhub non disponible pour {symbol}")
                 return []
                 
             # News des dernières 24h
@@ -170,7 +203,7 @@ class AlternativeCollector:
                 to=end_date.strftime('%Y-%m-%d')
             )
             
-            return news[:20]  # Limite à 20 articles
+            return news[:20] if news else []  # Limite à 20 articles
             
         except Exception as e:
             logger.error(f"❌ Erreur récupération news Finnhub {symbol}: {e}")
@@ -179,7 +212,12 @@ class AlternativeCollector:
     def _analyze_news_sentiment(self, news_data):
         """Analyse le sentiment des articles de news"""
         if not news_data:
-            return {'overall_sentiment': 0, 'distribution': {'positive': 0, 'neutral': 0, 'negative': 0}, 'confidence': 0}
+            return {
+                'overall_sentiment': 0, 
+                'distribution': {'positive': 0, 'neutral': 0, 'negative': 0}, 
+                'confidence': 0,
+                'article_count': 0
+            }
         
         sentiments = []
         sentiment_scores = {'positive': 0, 'neutral': 0, 'negative': 0}
@@ -257,6 +295,59 @@ class AlternativeCollector:
                 return 'Baissier'
             else:
                 return 'Neutre'
-        except Exception as e:
-            logger.error(f"❌ Erreur détermination tendance sentiment: {e}")
+        except Exception:
             return 'Inconnu'
+
+    def collect_analyst_ratings(self):
+        """Collecte les notes et recommandations des analystes"""
+        logger.info("📈 Collecte des notes d'analystes...")
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        
+        for symbol in self.symbols:
+            try:
+                if self.finnhub_client:
+                    # Récupération des recommandations
+                    recommendations = self.finnhub_client.recommendation_trends(symbol)
+                    
+                    # Sauvegarde
+                    file_path = self.data_path / f'analyst_ratings/{symbol}_ratings_{timestamp}.json'
+                    with open(file_path, 'w') as f:
+                        json.dump({
+                            'symbol': symbol,
+                            'timestamp': timestamp,
+                            'recommendations': recommendations
+                        }, f, indent=2, default=str)
+                    
+                    logger.info(f"📊 Ratings collectés pour {symbol}")
+                
+                time.sleep(1)  # Rate limiting
+                
+            except Exception as e:
+                logger.error(f"❌ Erreur collecte ratings {symbol}: {e}")
+
+    def run_collection(self):
+        """Lance la collecte complète des données alternatives"""
+        logger.info("🚀 Démarrage collecte données alternatives")
+        
+        try:
+            # Collecte séquentielle pour éviter les problèmes de rate limiting
+            self.collect_news_sentiment()
+            time.sleep(2)
+            
+            self.collect_analyst_ratings()
+            time.sleep(2)
+            
+            logger.info("✅ Collecte données alternatives terminée")
+            
+        except Exception as e:
+            logger.error(f"❌ Erreur lors de la collecte: {e}")
+
+# Fonction pour utilisation externe
+def create_alternative_collector(symbols=None, data_path=None):
+    """Factory function pour créer un AlternativeCollector"""
+    return AlternativeCollector(symbols=symbols, data_path=data_path)
+
+if __name__ == "__main__":
+    # Test local
+    collector = AlternativeCollector()
+    collector.run_collection()
