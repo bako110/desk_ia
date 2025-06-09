@@ -4,6 +4,7 @@
 
 import pandas as pd
 import yfinance as yf
+import os
 from datetime import datetime
 from typing import List
 from .base_collector import BaseCollector
@@ -25,6 +26,9 @@ class FundamentalCollector(BaseCollector):
         self.config = config
         self.logger.info(f"FundamentalCollector initialisé avec chemin: {data_path}")
         
+        # Créer la structure de dossiers
+        self._create_directory_structure()
+        
         # Extraire les clés API spécifiques depuis la config
         if config and 'api_keys' in config:
             api_keys = config['api_keys']
@@ -35,10 +39,26 @@ class FundamentalCollector(BaseCollector):
             self.alpha_vantage_key = ''
             self.finnhub_key = ''
             self.yahoo_key = ''
+    
+    def _create_directory_structure(self):
+        """Crée la structure de dossiers pour les données fondamentales"""
+        base_path = "data/raw/fundamental"
+        directories = [
+            f"{base_path}/earnings",
+            f"{base_path}/financials", 
+            f"{base_path}/ratios",
+            f"{base_path}/estimates"
+        ]
         
-    def collect_data(self, symbols: List[str]) -> pd.DataFrame:
-        """Collecte des données fondamentales"""
-        all_data = []
+        for directory in directories:
+            os.makedirs(directory, exist_ok=True)
+            self.logger.info(f"Dossier créé/vérifié: {directory}")
+        
+    def collect_data(self, symbols: List[str]) -> dict:
+        """Collecte des données fondamentales et les sépare par catégorie"""
+        yahoo_data = []
+        alphavantage_data = []
+        finnhub_data = []
         
         for symbol in symbols:
             self.logger.info(f"Collecte des fondamentaux pour {symbol}")
@@ -47,7 +67,7 @@ class FundamentalCollector(BaseCollector):
             try:
                 data = self._collect_yahoo_fundamentals(symbol)
                 if not data.empty:
-                    all_data.append(data)
+                    yahoo_data.append(data)
             except Exception as e:
                 self.logger.warning(f"Erreur fondamentaux Yahoo {symbol}: {e}")
             
@@ -56,7 +76,7 @@ class FundamentalCollector(BaseCollector):
                 try:
                     data = self._collect_alphavantage_fundamentals(symbol)
                     if not data.empty:
-                        all_data.append(data)
+                        alphavantage_data.append(data)
                 except Exception as e:
                     self.logger.warning(f"Erreur fondamentaux AlphaVantage {symbol}: {e}")
             
@@ -65,21 +85,92 @@ class FundamentalCollector(BaseCollector):
                 try:
                     data = self._collect_finnhub_fundamentals(symbol)
                     if not data.empty:
-                        all_data.append(data)
+                        finnhub_data.append(data)
                 except Exception as e:
                     self.logger.warning(f"Erreur fondamentaux Finnhub {symbol}: {e}")
             
             self.rate_limit()
         
-        if all_data:
-            result = pd.concat(all_data, ignore_index=True)
-            # Sauvegarde en base de données
-            self.save_to_database(result, "fundamental_data")
-            # Sauvegarde en CSV
-            self.save_to_csv(result, f"data/raw/fundamental/fundamentals_{datetime.now().strftime('%Y%m%d')}.csv")
-            return result
+        # Traiter et sauvegarder chaque source séparément
+        result = {}
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
         
-        return pd.DataFrame()
+        if yahoo_data:
+            yahoo_df = pd.concat(yahoo_data, ignore_index=True)
+            # Séparer par catégories
+            ratios_yahoo = self._extract_ratios_data(yahoo_df)
+            financials_yahoo = self._extract_financials_data(yahoo_df)
+            
+            # Sauvegarder dans des fichiers séparés
+            self.save_to_csv(ratios_yahoo, f"data/raw/fundamental/ratios/yahoo_ratios_{timestamp}.csv")
+            self.save_to_csv(financials_yahoo, f"data/raw/fundamental/financials/yahoo_financials_{timestamp}.csv")
+            
+            # Sauvegarde en base de données
+            self.save_to_database(yahoo_df, "fundamental_data_yahoo")
+            result['yahoo_data'] = yahoo_df
+        
+        if alphavantage_data:
+            alphavantage_df = pd.concat(alphavantage_data, ignore_index=True)
+            # Séparer par catégories
+            ratios_av = self._extract_ratios_data(alphavantage_df)
+            financials_av = self._extract_financials_data(alphavantage_df)
+            
+            # Sauvegarder dans des fichiers séparés
+            self.save_to_csv(ratios_av, f"data/raw/fundamental/ratios/alphavantage_ratios_{timestamp}.csv")
+            self.save_to_csv(financials_av, f"data/raw/fundamental/financials/alphavantage_financials_{timestamp}.csv")
+            
+            # Sauvegarde en base de données
+            self.save_to_database(alphavantage_df, "fundamental_data_alphavantage")
+            result['alphavantage_data'] = alphavantage_df
+        
+        if finnhub_data:
+            finnhub_df = pd.concat(finnhub_data, ignore_index=True)
+            # Séparer par catégories
+            ratios_fh = self._extract_ratios_data(finnhub_df)
+            financials_fh = self._extract_financials_data(finnhub_df)
+            
+            # Sauvegarder dans des fichiers séparés
+            self.save_to_csv(ratios_fh, f"data/raw/fundamental/ratios/finnhub_ratios_{timestamp}.csv")
+            self.save_to_csv(financials_fh, f"data/raw/fundamental/financials/finnhub_financials_{timestamp}.csv")
+            
+            # Sauvegarde en base de données
+            self.save_to_database(finnhub_df, "fundamental_data_finnhub")
+            result['finnhub_data'] = finnhub_df
+        
+        return result
+    
+    def _extract_ratios_data(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Extrait les colonnes relatives aux ratios financiers"""
+        ratio_columns = [
+            'Symbol', 'Timestamp', 'Source',
+            'PERatio', 'ForwardPE', 'TrailingPE', 'PEGRatio', 
+            'PriceToBook', 'PriceToSales', 'ROE', 'ROA', 'ROI',
+            'DebtToEquity', 'CurrentRatio', 'QuickRatio', 'CashRatio',
+            'GrossMargins', 'OperatingMargins', 'ProfitMargins', 'NetMargin',
+            'Beta', 'DividendYield', 'PayoutRatio', 'AssetTurnover',
+            'InventoryTurnover', 'DebtEquityRatio', 'EnterpriseToRevenue',
+            'EnterpriseToEbitda'
+        ]
+        
+        # Filtrer seulement les colonnes qui existent dans le DataFrame
+        available_columns = [col for col in ratio_columns if col in df.columns]
+        return df[available_columns].copy()
+    
+    def _extract_financials_data(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Extrait les colonnes relatives aux données financières"""
+        financial_columns = [
+            'Symbol', 'Timestamp', 'Source',
+            'MarketCap', 'EnterpriseValue', 'TotalCash', 'TotalDebt',
+            'TotalRevenue', 'RevenuePerShare', 'RevenueGrowth',
+            'EarningsGrowth', 'BookValue', 'EPS', 'DilutedEPS',
+            'EBITDA', 'SharesOutstanding', 'DividendPerShare',
+            'QuarterlyEarningsGrowth', 'QuarterlyRevenueGrowth',
+            'GrossMargin', 'OperatingMargin', 'ProfitMargin'
+        ]
+        
+        # Filtrer seulement les colonnes qui existent dans le DataFrame
+        available_columns = [col for col in financial_columns if col in df.columns]
+        return df[available_columns].copy()
     
     def _collect_yahoo_fundamentals(self, symbol: str) -> pd.DataFrame:
         """Fondamentaux via Yahoo Finance (gratuit, pas de clé requise)"""
@@ -301,15 +392,18 @@ class FundamentalCollector(BaseCollector):
         
         if all_earnings:
             result = pd.DataFrame(all_earnings)
-            self.save_to_csv(result, f"data/raw/fundamental/earnings/earnings_{datetime.now().strftime('%Y%m%d')}.csv")
+            timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+            # Sauvegarder dans le dossier earnings
+            self.save_to_csv(result, f"data/raw/fundamental/earnings/earnings_{timestamp}.csv")
             return result
         
         return pd.DataFrame()
 
     def get_yahoo_financial_statements(self, symbol: str) -> dict:
-        """Récupère les états financiers via Yahoo Finance"""
+        """Récupère les états financiers via Yahoo Finance et les sauvegarde séparément"""
         try:
             ticker = yf.Ticker(symbol)
+            timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
             
             # États financiers
             financials = {
@@ -321,11 +415,58 @@ class FundamentalCollector(BaseCollector):
                 'quarterly_cashflow': ticker.quarterly_cashflow
             }
             
+            # Sauvegarder chaque état financier dans un fichier séparé
+            for statement_type, data in financials.items():
+                if not data.empty:
+                    filename = f"data/raw/fundamental/financials/{symbol}_{statement_type}_{timestamp}.csv"
+                    self.save_to_csv(data, filename)
+            
             return financials
             
         except Exception as e:
             self.logger.error(f"Erreur états financiers Yahoo pour {symbol}: {e}")
             return {}
+
+    def collect_analyst_estimates(self, symbols: List[str]) -> pd.DataFrame:
+        """Collecte les estimations d'analystes et les sauvegarde"""
+        all_estimates = []
+        
+        for symbol in symbols:
+            self.logger.info(f"Collecte des estimations pour {symbol}")
+            
+            try:
+                ticker = yf.Ticker(symbol)
+                info = ticker.info
+                
+                if info:
+                    estimates_data = {
+                        'Symbol': symbol,
+                        'Timestamp': datetime.now(),
+                        'RecommendationMean': info.get('recommendationMean'),
+                        'RecommendationKey': info.get('recommendationKey'),
+                        'NumberOfAnalystOpinions': info.get('numberOfAnalystOpinions'),
+                        'TargetHighPrice': info.get('targetHighPrice'),
+                        'TargetLowPrice': info.get('targetLowPrice'),
+                        'TargetMeanPrice': info.get('targetMeanPrice'),
+                        'TargetMedianPrice': info.get('targetMedianPrice'),
+                        'CurrentPrice': info.get('currentPrice'),
+                        'Source': 'yahoo'
+                    }
+                    all_estimates.append(estimates_data)
+                    
+            except Exception as e:
+                self.logger.error(f"Erreur estimations {symbol}: {e}")
+            
+            self.rate_limit()
+        
+        if all_estimates:
+            result = pd.DataFrame(all_estimates)
+            timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+            # Sauvegarder dans le dossier estimates
+            self.save_to_csv(result, f"data/raw/fundamental/estimates/analyst_estimates_{timestamp}.csv")
+            return result
+        
+        return pd.DataFrame()
 
     def collect(self, symbols: List[str] = None):
         """Méthode principale de collecte - interface commune avec les autres collecteurs"""
@@ -345,20 +486,29 @@ class FundamentalCollector(BaseCollector):
         
         self.logger.info(f"APIs disponibles: {', '.join(apis_available)}")
         
-        # Collecte des données fondamentales
+        # Collecte des données fondamentales (ratios + financials séparés)
         fundamental_data = self.collect_data(symbols)
         
-        # Collecte des données de résultats
+        # Collecte des données de résultats (dans earnings/)
         earnings_data = self.collect_earnings_data(symbols)
+        
+        # Collecte des estimations d'analystes (dans estimates/)
+        estimates_data = self.collect_analyst_estimates(symbols)
+        
+        # Collecte des états financiers détaillés pour chaque symbole
+        for symbol in symbols[:3]:  # Limiter à 3 pour éviter trop de fichiers
+            self.get_yahoo_financial_statements(symbol)
         
         self.logger.info("Collecte des données fondamentales terminée")
         
         return {
             'fundamental_data': fundamental_data,
             'earnings_data': earnings_data,
+            'estimates_data': estimates_data,
             'summary': {
                 'symbols_processed': len(symbols),
-                'fundamental_records': len(fundamental_data) if not fundamental_data.empty else 0,
-                'earnings_records': len(earnings_data) if not earnings_data.empty else 0
+                'fundamental_sources': len(fundamental_data),
+                'earnings_records': len(earnings_data) if not earnings_data.empty else 0,
+                'estimates_records': len(estimates_data) if not estimates_data.empty else 0
             }
         }

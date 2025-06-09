@@ -1,0 +1,14 @@
+{
+  "symbol": "AMZN",
+  "composite_sentiment": {
+    "composite_score": 0.17197053130488563,
+    "sentiment_label": "Bullish",
+    "confidence": 0.17197053130488563,
+    "components": {
+      "alphavantage_news": 0.25528988,
+      "finnhub_news": 0.06087806637806637
+    },
+    "data_sources": 2
+  },
+  "timestamp": "2025-06-09T12:14:17.711574"
+}

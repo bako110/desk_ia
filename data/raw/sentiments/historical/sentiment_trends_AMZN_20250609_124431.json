@@ -1,0 +1,237 @@
+{
+  "symbol": "AMZN",
+  "source": "trend_analysis",
+  "daily_trends": [
+    {
+      "date": "2025-06-09",
+      "sentiment_score": -0.2580855123725463,
+      "news_volume": 20,
+      "social_mentions": 16
+    },
+    {
+      "date": "2025-06-08",
+      "sentiment_score": 0.012521063537622779,
+      "news_volume": 21,
+      "social_mentions": 101
+    },
+    {
+      "date": "2025-06-07",
+      "sentiment_score": -0.03022619621729017,
+      "news_volume": 32,
+      "social_mentions": 86
+    },
+    {
+      "date": "2025-06-06",
+      "sentiment_score": -0.2137647670822126,
+      "news_volume": 9,
+      "social_mentions": 80
+    },
+    {
+      "date": "2025-06-05",
+      "sentiment_score": -0.1134188238134633,
+      "news_volume": 12,
+      "social_mentions": 55
+    },
+    {
+      "date": "2025-06-04",
+      "sentiment_score": -0.04748970113776224,
+      "news_volume": 24,
+      "social_mentions": 100
+    },
+    {
+      "date": "2025-06-03",
+      "sentiment_score": -0.3853661638012528,
+      "news_volume": 47,
+      "social_mentions": 12
+    },
+    {
+      "date": "2025-06-02",
+      "sentiment_score": -0.04233832646413763,
+      "news_volume": 37,
+      "social_mentions": 30
+    },
+    {
+      "date": "2025-06-01",
+      "sentiment_score": 0.5082036675849515,
+      "news_volume": 9,
+      "social_mentions": 118
+    },
+    {
+      "date": "2025-05-31",
+      "sentiment_score": 0.2288430883635119,
+      "news_volume": 16,
+      "social_mentions": 198
+    },
+    {
+      "date": "2025-05-30",
+      "sentiment_score": 0.19032060368537268,
+      "news_volume": 8,
+      "social_mentions": 55
+    },
+    {
+      "date": "2025-05-29",
+      "sentiment_score": -0.33405427493959733,
+      "news_volume": 16,
+      "social_mentions": 179
+    },
+    {
+      "date": "2025-05-28",
+      "sentiment_score": 0.3277402907514241,
+      "news_volume": 14,
+      "social_mentions": 197
+    },
+    {
+      "date": "2025-05-27",
+      "sentiment_score": 0.4328784831281539,
+      "news_volume": 10,
+      "social_mentions": 44
+    },
+    {
+      "date": "2025-05-26",
+      "sentiment_score": 0.1592502564561531,
+      "news_volume": 7,
+      "social_mentions": 40
+    },
+    {
+      "date": "2025-05-25",
+      "sentiment_score": -0.44871440190347456,
+      "news_volume": 40,
+      "social_mentions": 23
+    },
+    {
+      "date": "2025-05-24",
+      "sentiment_score": 0.23305851532494176,
+      "news_volume": 18,
+      "social_mentions": 37
+    },
+    {
+      "date": "2025-05-23",
+      "sentiment_score": 0.0512013758127767,
+      "news_volume": 46,
+      "social_mentions": 189
+    },
+    {
+      "date": "2025-05-22",
+      "sentiment_score": -0.23483495818521305,
+      "news_volume": 10,
+      "social_mentions": 134
+    },
+    {
+      "date": "2025-05-21",
+      "sentiment_score": 0.09489987263658756,
+      "news_volume": 26,
+      "social_mentions": 48
+    },
+    {
+      "date": "2025-05-20",
+      "sentiment_score": -0.27611780137970315,
+      "news_volume": 19,
+      "social_mentions": 123
+    },
+    {
+      "date": "2025-05-19",
+      "sentiment_score": -0.49350171836337825,
+      "news_volume": 19,
+      "social_mentions": 12
+    },
+    {
+      "date": "2025-05-18",
+      "sentiment_score": 0.25540377256410796,
+      "news_volume": 27,
+      "social_mentions": 12
+    },
+    {
+      "date": "2025-05-17",
+      "sentiment_score": -0.23830221065846938,
+      "news_volume": 11,
+      "social_mentions": 20
+    },
+    {
+      "date": "2025-05-16",
+      "sentiment_score": -0.04146221097503153,
+      "news_volume": 35,
+      "social_mentions": 161
+    },
+    {
+      "date": "2025-05-15",
+      "sentiment_score": 0.15260539692467828,
+      "news_volume": 33,
+      "social_mentions": 70
+    },
+    {
+      "date": "2025-05-14",
+      "sentiment_score": -0.34499450073863114,
+      "news_volume": 27,
+      "social_mentions": 79
+    },
+    {
+      "date": "2025-05-13",
+      "sentiment_score": -0.18805809350472313,
+      "news_volume": 27,
+      "social_mentions": 37
+    },
+    {
+      "date": "2025-05-12",
+      "sentiment_score": -0.0844633176144593,
+      "news_volume": 29,
+      "social_mentions": 129
+    },
+    {
+      "date": "2025-05-11",
+      "sentiment_score": 0.23527485220930383,
+      "news_volume": 17,
+      "social_mentions": 16
+    }
+  ],
+  "moving_averages": {
+    "ma_7": [
+      -0.14797572869812922,
+      -0.11715470213978514,
+      -0.04634290156159532,
+      -0.009333003764337884,
+      0.04839347777388858,
+      0.016874127613012303,
+      0.07047841216861034,
+      0.187370504587097,
+      0.21616887357571,
+      0.07946629222022054,
+      0.08006849607185337,
+      0.060194320661482524,
+      0.07436850876925169,
+      0.041105591895703626,
+      -0.0601795916054188,
+      -0.1534298737224947,
+      -0.052841563084268635,
+      -0.12017880965332736,
+      -0.13341646490872855,
+      -0.07806784275017263,
+      -0.1409098960894896,
+      -0.12832993782163532,
+      -0.06989588057178975,
+      -0.07277144062247604
+    ],
+    "ma_14": [
+      0.01969738794448389,
+      0.04950708571796242,
+      0.016561695329312606,
+      0.035367746153757755,
+      0.054293899217685564,
+      0.04562131819113201,
+      0.05579200203215698,
+      0.0635954564908391,
+      0.03136949992660763,
+      0.013312364567975955,
+      -0.020055156790736987,
+      -0.036611072123623,
+      -0.0018496669904604739,
+      -0.049902152096892985,
+      -0.09425476471352706,
+      -0.11166287714714224,
+      -0.06280650185337235
+    ]
+  },
+  "current_trend": "Declining",
+  "volatility": 0.26057287731697903,
+  "avg_sentiment": -0.02976639133905866,
+  "timestamp": "2025-06-09T12:44:31.658017"
+}

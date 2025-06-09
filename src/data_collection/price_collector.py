@@ -15,7 +15,7 @@ import os
 class PriceCollector:
     """Collecteur de données de prix avec fallback multi-sources"""
     
-    def __init__(self, data_path: Path, config: dict):
+    def __init__(self, data_path: Path("data/raw/data_price"), config: dict):
         """
         Initialise le collecteur de prix
         

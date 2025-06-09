@@ -1,0 +1,136 @@
+2025-06-09 12:43:39,791 - __main__ - INFO - Config loaded from config\api_keys.yaml
+2025-06-09 12:43:39,793 - src.data_collection.price_collector - INFO - PriceCollector initialisé avec chemin: data\price_data
+2025-06-09 12:43:39,793 - __main__ - INFO - Collecteur de prix initialisé avec succès
+2025-06-09 12:43:39,795 - FundamentalCollector - INFO - FundamentalCollector initialisé avec chemin: data\fundamental
+2025-06-09 12:43:39,795 - FundamentalCollector - INFO - Dossier créé/vérifié: data/raw/fundamental/earnings
+2025-06-09 12:43:39,796 - FundamentalCollector - INFO - Dossier créé/vérifié: data/raw/fundamental/financials
+2025-06-09 12:43:39,797 - FundamentalCollector - INFO - Dossier créé/vérifié: data/raw/fundamental/ratios
+2025-06-09 12:43:39,798 - FundamentalCollector - INFO - Dossier créé/vérifié: data/raw/fundamental/estimates
+2025-06-09 12:43:39,799 - __main__ - INFO - Collecteur fondamental initialisé avec succès
+2025-06-09 12:43:39,803 - src.data_collection.sentiment_collector - INFO - Logging initialisé - Fichier: data\raw\sentiments\logs\sentiment_collector_20250609.log
+2025-06-09 12:43:39,804 - src.data_collection.sentiment_collector - INFO - SentimentCollector initialisé avec APIs: Alpha Vantage, Finnhub
+2025-06-09 12:43:39,805 - src.data_collection.sentiment_collector - INFO - Dossier de données: data\raw\sentiments
+2025-06-09 12:43:39,806 - __main__ - INFO - Collecteur de sentiment initialisé avec succès
+2025-06-09 12:43:39,807 - __main__ - INFO - Début de la collecte des données...
+2025-06-09 12:43:39,808 - src.data_collection.price_collector - INFO - Collecte des prix journaliers pour AAPL
+2025-06-09 12:43:41,905 - src.data_collection.price_collector - INFO - Collecte des prix journaliers pour MSFT
+2025-06-09 12:43:42,145 - src.data_collection.price_collector - INFO - Collecte des prix journaliers pour GOOGL
+2025-06-09 12:43:42,422 - src.data_collection.price_collector - INFO - Collecte des prix journaliers pour AMZN
+2025-06-09 12:43:42,632 - src.data_collection.price_collector - INFO - Collecte des prix journaliers pour TSLA
+2025-06-09 12:43:42,867 - src.data_collection.price_collector - INFO - Collecte des prix journaliers pour META
+2025-06-09 12:43:43,133 - src.data_collection.price_collector - INFO - Collecte des prix journaliers pour NVDA
+2025-06-09 12:43:43,398 - src.data_collection.price_collector - INFO - Collecte des prix journaliers pour NFLX
+2025-06-09 12:43:43,665 - src.data_collection.price_collector - INFO - Collecte des prix journaliers pour ORCL
+2025-06-09 12:43:43,892 - src.data_collection.price_collector - INFO - Collecte des prix journaliers pour CRM
+2025-06-09 12:43:44,322 - src.data_collection.price_collector - INFO - Données sauvegardées: data\price_data\daily\prices_daily_20250609.csv
+2025-06-09 12:43:44,323 - src.data_collection.price_collector - INFO - Collecté 5020 enregistrements de prix journaliers
+2025-06-09 12:43:44,323 - src.data_collection.price_collector - INFO - Collecte des données intrajournalières pour AAPL
+2025-06-09 12:43:45,099 - src.data_collection.price_collector - INFO - Collecte des données intrajournalières pour MSFT
+2025-06-09 12:43:45,868 - src.data_collection.price_collector - INFO - Collecte des données intrajournalières pour GOOGL
+2025-06-09 12:43:46,730 - src.data_collection.price_collector - INFO - Collecte des données intrajournalières pour AMZN
+2025-06-09 12:43:47,462 - src.data_collection.price_collector - INFO - Collecte des données intrajournalières pour TSLA
+2025-06-09 12:43:48,199 - src.data_collection.price_collector - INFO - Données sauvegardées: data\price_data\intraday\intraday_20250609_1243.csv
+2025-06-09 12:43:48,201 - src.data_collection.price_collector - INFO - Collecté 390 enregistrements intrajournaliers
+2025-06-09 12:43:48,202 - __main__ - INFO - ✅ Collecte des données de prix réussie.
+2025-06-09 12:43:48,203 - FundamentalCollector - INFO - Début de la collecte des données fondamentales pour 10 symboles
+2025-06-09 12:43:48,204 - FundamentalCollector - INFO - APIs disponibles: Yahoo Finance (gratuit)
+2025-06-09 12:43:48,206 - FundamentalCollector - INFO - Collecte des fondamentaux pour AAPL
+2025-06-09 12:43:49,830 - FundamentalCollector - INFO - Collecte des fondamentaux pour MSFT
+2025-06-09 12:43:51,877 - FundamentalCollector - INFO - Collecte des fondamentaux pour GOOGL
+2025-06-09 12:43:53,529 - FundamentalCollector - INFO - Collecte des fondamentaux pour AMZN
+2025-06-09 12:43:55,343 - FundamentalCollector - INFO - Collecte des fondamentaux pour TSLA
+2025-06-09 12:43:57,168 - FundamentalCollector - INFO - Collecte des fondamentaux pour META
+2025-06-09 12:43:58,812 - FundamentalCollector - INFO - Collecte des fondamentaux pour NVDA
+2025-06-09 12:44:00,529 - FundamentalCollector - INFO - Collecte des fondamentaux pour NFLX
+2025-06-09 12:44:02,466 - FundamentalCollector - INFO - Collecte des fondamentaux pour ADBE
+2025-06-09 12:44:04,088 - FundamentalCollector - INFO - Collecte des fondamentaux pour CRM
+2025-06-09 12:44:05,723 - FundamentalCollector - INFO - Données sauvegardées dans le fichier CSV : data/raw/fundamental/ratios/yahoo_ratios_20250609_124405.csv
+2025-06-09 12:44:05,727 - FundamentalCollector - INFO - Données sauvegardées dans le fichier CSV : data/raw/fundamental/financials/yahoo_financials_20250609_124405.csv
+2025-06-09 12:44:05,748 - FundamentalCollector - INFO - Données sauvegardées dans la table fundamental_data_yahoo.
+2025-06-09 12:44:05,749 - FundamentalCollector - WARNING - Clé Finnhub non disponible pour la collecte des résultats
+2025-06-09 12:44:05,751 - FundamentalCollector - INFO - Collecte des estimations pour AAPL
+2025-06-09 12:44:07,254 - FundamentalCollector - INFO - Collecte des estimations pour MSFT
+2025-06-09 12:44:08,894 - FundamentalCollector - INFO - Collecte des estimations pour GOOGL
+2025-06-09 12:44:10,439 - FundamentalCollector - INFO - Collecte des estimations pour AMZN
+2025-06-09 12:44:11,876 - FundamentalCollector - INFO - Collecte des estimations pour TSLA
+2025-06-09 12:44:13,347 - FundamentalCollector - INFO - Collecte des estimations pour META
+2025-06-09 12:44:14,906 - FundamentalCollector - INFO - Collecte des estimations pour NVDA
+2025-06-09 12:44:16,345 - FundamentalCollector - INFO - Collecte des estimations pour NFLX
+2025-06-09 12:44:17,806 - FundamentalCollector - INFO - Collecte des estimations pour ADBE
+2025-06-09 12:44:19,311 - FundamentalCollector - INFO - Collecte des estimations pour CRM
+2025-06-09 12:44:20,845 - FundamentalCollector - INFO - Données sauvegardées dans le fichier CSV : data/raw/fundamental/estimates/analyst_estimates_20250609_124420.csv
+2025-06-09 12:44:23,286 - FundamentalCollector - INFO - Données sauvegardées dans le fichier CSV : data/raw/fundamental/financials/AAPL_income_statement_20250609_124420.csv
+2025-06-09 12:44:23,290 - FundamentalCollector - INFO - Données sauvegardées dans le fichier CSV : data/raw/fundamental/financials/AAPL_balance_sheet_20250609_124420.csv
+2025-06-09 12:44:23,293 - FundamentalCollector - INFO - Données sauvegardées dans le fichier CSV : data/raw/fundamental/financials/AAPL_cash_flow_20250609_124420.csv
+2025-06-09 12:44:23,297 - FundamentalCollector - INFO - Données sauvegardées dans le fichier CSV : data/raw/fundamental/financials/AAPL_quarterly_financials_20250609_124420.csv
+2025-06-09 12:44:23,301 - FundamentalCollector - INFO - Données sauvegardées dans le fichier CSV : data/raw/fundamental/financials/AAPL_quarterly_balance_sheet_20250609_124420.csv
+2025-06-09 12:44:23,306 - FundamentalCollector - INFO - Données sauvegardées dans le fichier CSV : data/raw/fundamental/financials/AAPL_quarterly_cashflow_20250609_124420.csv
+2025-06-09 12:44:25,506 - FundamentalCollector - INFO - Données sauvegardées dans le fichier CSV : data/raw/fundamental/financials/MSFT_income_statement_20250609_124423.csv
+2025-06-09 12:44:25,509 - FundamentalCollector - INFO - Données sauvegardées dans le fichier CSV : data/raw/fundamental/financials/MSFT_balance_sheet_20250609_124423.csv
+2025-06-09 12:44:25,515 - FundamentalCollector - INFO - Données sauvegardées dans le fichier CSV : data/raw/fundamental/financials/MSFT_cash_flow_20250609_124423.csv
+2025-06-09 12:44:25,518 - FundamentalCollector - INFO - Données sauvegardées dans le fichier CSV : data/raw/fundamental/financials/MSFT_quarterly_financials_20250609_124423.csv
+2025-06-09 12:44:25,522 - FundamentalCollector - INFO - Données sauvegardées dans le fichier CSV : data/raw/fundamental/financials/MSFT_quarterly_balance_sheet_20250609_124423.csv
+2025-06-09 12:44:25,525 - FundamentalCollector - INFO - Données sauvegardées dans le fichier CSV : data/raw/fundamental/financials/MSFT_quarterly_cashflow_20250609_124423.csv
+2025-06-09 12:44:27,942 - FundamentalCollector - INFO - Données sauvegardées dans le fichier CSV : data/raw/fundamental/financials/GOOGL_income_statement_20250609_124425.csv
+2025-06-09 12:44:27,962 - FundamentalCollector - INFO - Données sauvegardées dans le fichier CSV : data/raw/fundamental/financials/GOOGL_balance_sheet_20250609_124425.csv
+2025-06-09 12:44:27,968 - FundamentalCollector - INFO - Données sauvegardées dans le fichier CSV : data/raw/fundamental/financials/GOOGL_cash_flow_20250609_124425.csv
+2025-06-09 12:44:27,994 - FundamentalCollector - INFO - Données sauvegardées dans le fichier CSV : data/raw/fundamental/financials/GOOGL_quarterly_financials_20250609_124425.csv
+2025-06-09 12:44:27,999 - FundamentalCollector - INFO - Données sauvegardées dans le fichier CSV : data/raw/fundamental/financials/GOOGL_quarterly_balance_sheet_20250609_124425.csv
+2025-06-09 12:44:28,011 - FundamentalCollector - INFO - Données sauvegardées dans le fichier CSV : data/raw/fundamental/financials/GOOGL_quarterly_cashflow_20250609_124425.csv
+2025-06-09 12:44:28,019 - FundamentalCollector - INFO - Collecte des données fondamentales terminée
+2025-06-09 12:44:28,025 - __main__ - INFO - ✅ Collecte des données fondamentales réussie.
+2025-06-09 12:44:28,033 - src.data_collection.sentiment_collector - INFO - 🚀 Début collecte sentiment pour 5 symboles
+2025-06-09 12:44:28,045 - src.data_collection.sentiment_collector - INFO - 📊 Collecte sentiment pour AAPL
+2025-06-09 12:44:28,055 - src.data_collection.sentiment_collector - INFO - Récupération news Alpha Vantage pour AAPL
+2025-06-09 12:44:28,060 - src.data_collection.sentiment_collector - INFO - Récupération news Finnhub pour AAPL
+2025-06-09 12:44:28,061 - src.data_collection.sentiment_collector - INFO - Récupération sentiment social pour AAPL
+2025-06-09 12:44:28,077 - src.data_collection.sentiment_collector - INFO - ✅ Données sauvegardées: data\raw\sentiments\historical\sentiment_trends_AAPL_20250609_124428.json
+2025-06-09 12:44:28,974 - src.data_collection.sentiment_collector - ERROR - Erreur API finnhub: Status 403
+2025-06-09 12:44:29,224 - src.data_collection.sentiment_collector - INFO - ✅ Données sauvegardées: data\raw\sentiments\daily\finnhub_news_AAPL_20250609_124429.json
+2025-06-09 12:44:29,421 - src.data_collection.sentiment_collector - INFO - ✅ Données sauvegardées: data\raw\sentiments\daily\alphavantage_news_AAPL_20250609_124429.json
+2025-06-09 12:44:29,423 - src.data_collection.sentiment_collector - INFO - ✅ Données sauvegardées: data\raw\sentiments\composite\composite_sentiment_AAPL_20250609_124429.json
+2025-06-09 12:44:29,425 - src.data_collection.sentiment_collector - INFO - ✅ Données sauvegardées: data\raw\sentiments\daily\market_fear_greed_index_20250609_124429.json
+2025-06-09 12:44:29,425 - src.data_collection.sentiment_collector - INFO - ✅ Sentiment collecté pour AAPL: Bullish (Confiance: 0.13)
+2025-06-09 12:44:29,428 - src.data_collection.sentiment_collector - INFO - 📊 Collecte sentiment pour MSFT
+2025-06-09 12:44:29,429 - src.data_collection.sentiment_collector - INFO - Récupération news Alpha Vantage pour MSFT
+2025-06-09 12:44:29,430 - src.data_collection.sentiment_collector - INFO - Récupération news Finnhub pour MSFT
+2025-06-09 12:44:29,431 - src.data_collection.sentiment_collector - INFO - Récupération sentiment social pour MSFT
+2025-06-09 12:44:29,435 - src.data_collection.sentiment_collector - INFO - ✅ Données sauvegardées: data\raw\sentiments\historical\sentiment_trends_MSFT_20250609_124429.json
+2025-06-09 12:44:30,369 - src.data_collection.sentiment_collector - ERROR - Erreur API finnhub: Status 403
+2025-06-09 12:44:30,583 - src.data_collection.sentiment_collector - INFO - ✅ Données sauvegardées: data\raw\sentiments\daily\finnhub_news_MSFT_20250609_124430.json
+2025-06-09 12:44:30,592 - src.data_collection.sentiment_collector - INFO - ✅ Données sauvegardées: data\raw\sentiments\daily\alphavantage_news_MSFT_20250609_124430.json
+2025-06-09 12:44:30,595 - src.data_collection.sentiment_collector - INFO - ✅ Données sauvegardées: data\raw\sentiments\composite\composite_sentiment_MSFT_20250609_124430.json
+2025-06-09 12:44:30,599 - src.data_collection.sentiment_collector - INFO - ✅ Sentiment collecté pour MSFT: Bullish (Confiance: 0.19)
+2025-06-09 12:44:30,599 - src.data_collection.sentiment_collector - INFO - 📊 Collecte sentiment pour GOOGL
+2025-06-09 12:44:30,600 - src.data_collection.sentiment_collector - INFO - Récupération news Alpha Vantage pour GOOGL
+2025-06-09 12:44:30,601 - src.data_collection.sentiment_collector - INFO - Récupération news Finnhub pour GOOGL
+2025-06-09 12:44:30,602 - src.data_collection.sentiment_collector - INFO - Récupération sentiment social pour GOOGL
+2025-06-09 12:44:30,607 - src.data_collection.sentiment_collector - INFO - ✅ Données sauvegardées: data\raw\sentiments\historical\sentiment_trends_GOOGL_20250609_124430.json
+2025-06-09 12:44:31,347 - src.data_collection.sentiment_collector - ERROR - Erreur API finnhub: Status 403
+2025-06-09 12:44:31,415 - src.data_collection.sentiment_collector - INFO - ✅ Données sauvegardées: data\raw\sentiments\daily\alphavantage_news_GOOGL_20250609_124431.json
+2025-06-09 12:44:31,649 - src.data_collection.sentiment_collector - INFO - ✅ Données sauvegardées: data\raw\sentiments\daily\finnhub_news_GOOGL_20250609_124431.json
+2025-06-09 12:44:31,651 - src.data_collection.sentiment_collector - INFO - ✅ Données sauvegardées: data\raw\sentiments\composite\composite_sentiment_GOOGL_20250609_124431.json
+2025-06-09 12:44:31,652 - src.data_collection.sentiment_collector - INFO - ✅ Sentiment collecté pour GOOGL: Neutral (Confiance: 0.07)
+2025-06-09 12:44:31,653 - src.data_collection.sentiment_collector - INFO - 📊 Collecte sentiment pour AMZN
+2025-06-09 12:44:31,654 - src.data_collection.sentiment_collector - INFO - Récupération news Alpha Vantage pour AMZN
+2025-06-09 12:44:31,655 - src.data_collection.sentiment_collector - INFO - Récupération news Finnhub pour AMZN
+2025-06-09 12:44:31,656 - src.data_collection.sentiment_collector - INFO - Récupération sentiment social pour AMZN
+2025-06-09 12:44:31,660 - src.data_collection.sentiment_collector - INFO - ✅ Données sauvegardées: data\raw\sentiments\historical\sentiment_trends_AMZN_20250609_124431.json
+2025-06-09 12:44:32,560 - src.data_collection.sentiment_collector - ERROR - Erreur API finnhub: Status 403
+2025-06-09 12:44:32,702 - src.data_collection.sentiment_collector - INFO - ✅ Données sauvegardées: data\raw\sentiments\daily\finnhub_news_AMZN_20250609_124432.json
+2025-06-09 12:44:32,709 - src.data_collection.sentiment_collector - INFO - ✅ Données sauvegardées: data\raw\sentiments\daily\alphavantage_news_AMZN_20250609_124432.json
+2025-06-09 12:44:32,711 - src.data_collection.sentiment_collector - INFO - ✅ Données sauvegardées: data\raw\sentiments\composite\composite_sentiment_AMZN_20250609_124432.json
+2025-06-09 12:44:32,712 - src.data_collection.sentiment_collector - INFO - ✅ Sentiment collecté pour AMZN: Bullish (Confiance: 0.18)
+2025-06-09 12:44:32,713 - src.data_collection.sentiment_collector - INFO - 📊 Collecte sentiment pour TSLA
+2025-06-09 12:44:32,713 - src.data_collection.sentiment_collector - INFO - Récupération news Alpha Vantage pour TSLA
+2025-06-09 12:44:32,714 - src.data_collection.sentiment_collector - INFO - Récupération news Finnhub pour TSLA
+2025-06-09 12:44:32,715 - src.data_collection.sentiment_collector - INFO - Récupération sentiment social pour TSLA
+2025-06-09 12:44:32,721 - src.data_collection.sentiment_collector - INFO - ✅ Données sauvegardées: data\raw\sentiments\historical\sentiment_trends_TSLA_20250609_124432.json
+2025-06-09 12:44:33,266 - src.data_collection.sentiment_collector - ERROR - Erreur API finnhub: Status 403
+2025-06-09 12:44:33,543 - src.data_collection.sentiment_collector - INFO - ✅ Données sauvegardées: data\raw\sentiments\daily\finnhub_news_TSLA_20250609_124433.json
+2025-06-09 12:44:33,803 - src.data_collection.sentiment_collector - INFO - ✅ Données sauvegardées: data\raw\sentiments\daily\alphavantage_news_TSLA_20250609_124433.json
+2025-06-09 12:44:33,805 - src.data_collection.sentiment_collector - INFO - ✅ Données sauvegardées: data\raw\sentiments\composite\composite_sentiment_TSLA_20250609_124433.json
+2025-06-09 12:44:33,807 - src.data_collection.sentiment_collector - INFO - ✅ Sentiment collecté pour TSLA: Neutral (Confiance: 0.07)
+2025-06-09 12:44:33,875 - src.data_collection.sentiment_collector - INFO - 📋 Rapport complet sauvegardé: data\raw\sentiments\comprehensive_sentiment_report_20250609_124433.json
+2025-06-09 12:44:33,876 - src.data_collection.sentiment_collector - INFO - 🎉 Collecte sentiment terminée pour 5 symboles
+2025-06-09 12:44:33,879 - __main__ - INFO - ✅ Collecte des données de sentiment réussie.

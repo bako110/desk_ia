@@ -1,0 +1,14 @@
+{
+  "symbol": "AAPL",
+  "composite_sentiment": {
+    "composite_score": 0.12374476111317254,
+    "sentiment_label": "Bullish",
+    "confidence": 0.12374476111317254,
+    "components": {
+      "alphavantage_news": 0.17398027999999996,
+      "finnhub_news": 0.05676406926406927
+    },
+    "data_sources": 2
+  },
+  "timestamp": "2025-06-09T12:14:12.004337"
+}

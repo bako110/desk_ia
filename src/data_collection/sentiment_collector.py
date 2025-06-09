@@ -1,5 +1,6 @@
 # =============================================================================
 # SENTIMENT COLLECTOR - NASDAQ IA TRADING
+# Version restructurée avec gestion automatique des dossiers
 # =============================================================================
 from pathlib import Path
 import yaml
@@ -8,25 +9,35 @@ import time
 import asyncio
 import aiohttp
 from datetime import datetime, timedelta
-from typing import List, Dict
+from typing import List, Dict, Optional
 import numpy as np
 from textblob import TextBlob
 import json
+import os
+import sys
 
 
 class SentimentCollector:
     """Collecteur de données de sentiment et d'actualités financières"""
 
-    def __init__(self, config: dict = None, data_folder: Path = None):
+    def __init__(self, config: dict = None, base_data_folder: Path = None):
         """
         Initialise le collecteur de sentiment
         
         Args:
             config: Configuration avec les clés API
-            data_folder: Dossier de données (optionnel, pour compatibilité)
+            base_data_folder: Dossier de base des données (défaut: ./data)
         """
+        # Configuration des dossiers
+        self.base_data_folder = Path(base_data_folder) if base_data_folder else Path("data")
+        self.raw_data_folder = self.base_data_folder / "raw"
+        self.sentiment_folder = self.raw_data_folder / "sentiments"
+        
+        # Créer la structure de dossiers si elle n'existe pas
+        self._create_directory_structure()
+        
+        # Configuration des APIs
         if config:
-            # Utiliser la configuration fournie
             self.sentiment_apis = config.get('sentiment_apis', {})
             self.rate_limits = config.get('rate_limits', {})
         else:
@@ -40,11 +51,56 @@ class SentimentCollector:
                 'finnhub': 60
             }
         
-        self.data_folder = data_folder or Path("data")
-        self.logger = logging.getLogger(__name__)
+        # Configuration du logging
+        self._setup_logging()
+        
+        # Gestion du rate limiting
         self.request_times = {}
         
         # Log des APIs disponibles
+        self._log_available_apis()
+        
+    def _create_directory_structure(self):
+        """Créer la structure de dossiers nécessaire"""
+        try:
+            # Créer les dossiers principaux
+            self.base_data_folder.mkdir(parents=True, exist_ok=True)
+            self.raw_data_folder.mkdir(parents=True, exist_ok=True)
+            self.sentiment_folder.mkdir(parents=True, exist_ok=True)
+            
+            # Créer des sous-dossiers pour l'organisation
+            (self.sentiment_folder / "daily").mkdir(parents=True, exist_ok=True)
+            (self.sentiment_folder / "historical").mkdir(parents=True, exist_ok=True)
+            (self.sentiment_folder / "composite").mkdir(parents=True, exist_ok=True)
+            (self.sentiment_folder / "logs").mkdir(parents=True, exist_ok=True)
+            
+            print(f"✅ Structure de dossiers créée: {self.sentiment_folder}")
+            
+        except Exception as e:
+            print(f"❌ Erreur création dossiers: {e}")
+            raise
+    
+    def _setup_logging(self):
+        """Configuration du système de logging"""
+        # Fichier de log avec horodatage
+        log_filename = f"sentiment_collector_{datetime.now().strftime('%Y%m%d')}.log"
+        log_filepath = self.sentiment_folder / "logs" / log_filename
+        
+        # Configuration du logger
+        logging.basicConfig(
+            level=logging.INFO,
+            format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+            handlers=[
+                logging.FileHandler(log_filepath, encoding='utf-8'),
+                logging.StreamHandler(sys.stdout)
+            ]
+        )
+        
+        self.logger = logging.getLogger(__name__)
+        self.logger.info(f"Logging initialisé - Fichier: {log_filepath}")
+    
+    def _log_available_apis(self):
+        """Logger les APIs disponibles"""
         available_apis = []
         if self.sentiment_apis.get('alpha_vantage'):
             available_apis.append('Alpha Vantage')
@@ -52,7 +108,8 @@ class SentimentCollector:
             available_apis.append('Finnhub')
         
         self.logger.info(f"SentimentCollector initialisé avec APIs: {', '.join(available_apis)}")
-        
+        self.logger.info(f"Dossier de données: {self.sentiment_folder}")
+
     async def _rate_limit_wait(self, api_name: str):
         """Gestion du rate limiting"""
         current_time = time.time()
@@ -99,7 +156,7 @@ class SentimentCollector:
                 return {"error": str(e)}
     
     async def get_alphavantage_news_sentiment(self, symbol: str, limit: int = 50) -> dict:
-        """Collecter sentiment des news Alpha Vantage (clé: RU6W0PWAUZ0JYD0A)"""
+        """Collecter sentiment des news Alpha Vantage"""
         if not self.sentiment_apis.get('alpha_vantage'):
             return {"error": "Alpha Vantage API key not available", "symbol": symbol}
             
@@ -111,6 +168,7 @@ class SentimentCollector:
             "apikey": self.sentiment_apis["alpha_vantage"]
         }
         
+        self.logger.info(f"Récupération news Alpha Vantage pour {symbol}")
         data = await self._make_request(url, params, "alpha_vantage")
         
         if "error" in data:
@@ -143,18 +201,23 @@ class SentimentCollector:
                     self.logger.warning(f"Erreur analyse article {symbol}: {e}")
                     continue
             
-            return {
+            result = {
                 "symbol": symbol,
+                "source": "alpha_vantage",
                 "news_count": len(analyzed_news),
                 "articles": analyzed_news,
                 "avg_sentiment_score": np.mean([art["overall_sentiment_score"] for art in analyzed_news]) if analyzed_news else 0,
                 "timestamp": datetime.now().isoformat()
             }
+            
+            # Sauvegarder automatiquement
+            await self._save_sentiment_data(result, f"alphavantage_news_{symbol}")
+            return result
         
         return {"error": "No valid news data received", "symbol": symbol}
     
     async def get_finnhub_news(self, symbol: str, days_back: int = 7) -> dict:
-        """Collecter news Finnhub (clé: d0ng2fpr01qi1cve64bgd0ng2fpr01qi1cve64c0)"""
+        """Collecter news Finnhub"""
         if not self.sentiment_apis.get('finnhub'):
             return {"error": "Finnhub API key not available", "symbol": symbol}
             
@@ -169,6 +232,7 @@ class SentimentCollector:
             "token": self.sentiment_apis["finnhub"]
         }
         
+        self.logger.info(f"Récupération news Finnhub pour {symbol}")
         data = await self._make_request(url, params, "finnhub")
         
         if "error" in data:
@@ -206,8 +270,9 @@ class SentimentCollector:
                 title_polarities = [art["title_polarity"] for art in analyzed_news if art["title_polarity"] is not None]
                 summary_polarities = [art["summary_polarity"] for art in analyzed_news if art["summary_polarity"] is not None]
                 
-                return {
+                result = {
                     "symbol": symbol,
+                    "source": "finnhub",
                     "news_count": len(analyzed_news),
                     "articles": analyzed_news,
                     "avg_title_sentiment": np.mean(title_polarities) if title_polarities else 0,
@@ -215,6 +280,10 @@ class SentimentCollector:
                     "sentiment_std": np.std(title_polarities) if title_polarities else 0,
                     "timestamp": datetime.now().isoformat()
                 }
+                
+                # Sauvegarder automatiquement
+                await self._save_sentiment_data(result, f"finnhub_news_{symbol}")
+                return result
         
         return {"error": "No valid news data received", "symbol": symbol}
     
@@ -229,6 +298,7 @@ class SentimentCollector:
             "token": self.sentiment_apis["finnhub"]
         }
         
+        self.logger.info(f"Récupération sentiment social pour {symbol}")
         data = await self._make_request(url, params, "finnhub")
         
         if "error" in data:
@@ -237,6 +307,7 @@ class SentimentCollector:
         if "reddit" in data or "twitter" in data:
             result = {
                 "symbol": symbol,
+                "source": "finnhub_social",
                 "reddit_sentiment": data.get("reddit", []),
                 "twitter_sentiment": data.get("twitter", []),
                 "timestamp": datetime.now().isoformat()
@@ -267,6 +338,8 @@ class SentimentCollector:
                 result["reddit_mentions"] = 0
                 result["twitter_mentions"] = 0
             
+            # Sauvegarder automatiquement
+            await self._save_sentiment_data(result, f"finnhub_social_{symbol}")
             return result
         
         return {"error": "No social sentiment data available", "symbol": symbol}
@@ -370,12 +443,16 @@ class SentimentCollector:
                 fear_greed_score = np.random.randint(75, 100)  # Extreme Greed
                 label = "Extreme Greed"
             
-            return {
+            result = {
                 "fear_greed_score": fear_greed_score,
                 "label": label,
                 "vix_reference": vix_value,
                 "timestamp": datetime.now().isoformat()
             }
+            
+            # Sauvegarder automatiquement
+            await self._save_sentiment_data(result, "market_fear_greed_index")
+            return result
             
         except Exception as e:
             self.logger.error(f"Erreur calcul Fear & Greed: {e}")
@@ -439,8 +516,9 @@ class SentimentCollector:
                 elif recent_avg < older_avg - 0.1:
                     current_trend = "Declining"
             
-            return {
+            result = {
                 "symbol": symbol,
+                "source": "trend_analysis",
                 "daily_trends": trends,
                 "moving_averages": {
                     "ma_7": ma_7,
@@ -452,18 +530,49 @@ class SentimentCollector:
                 "timestamp": datetime.now().isoformat()
             }
             
+            # Sauvegarder automatiquement
+            await self._save_sentiment_data(result, f"sentiment_trends_{symbol}")
+            return result
+            
         except Exception as e:
             self.logger.error(f"Erreur analyse tendances {symbol}: {e}")
             return {"error": str(e), "symbol": symbol}
     
+    async def _save_sentiment_data(self, data: dict, filename_prefix: str):
+        """Sauvegarder les données de sentiment automatiquement"""
+        try:
+            timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+            filename = f"{filename_prefix}_{timestamp}.json"
+            
+            # Déterminer le sous-dossier selon le type de données
+            if "composite" in filename_prefix.lower():
+                subfolder = "composite"
+            elif "trend" in filename_prefix.lower():
+                subfolder = "historical"
+            else:
+                subfolder = "daily"
+            
+            filepath = self.sentiment_folder / subfolder / filename
+            
+            # Sauvegarder les données
+            with open(filepath, 'w', encoding='utf-8') as f:
+                json.dump(data, f, indent=2, ensure_ascii=False, default=str)
+            
+            self.logger.info(f"✅ Données sauvegardées: {filepath}")
+            
+        except Exception as e:
+            self.logger.error(f"❌ Erreur sauvegarde données: {e}")
+    
     async def collect_comprehensive_sentiment(self, symbols: List[str]) -> Dict[str, dict]:
-        """Collecter sentiment complet pour plusieurs symboles"""
+        """Collecter sentiment complet pour plusieurs symboles avec sauvegarde automatique"""
         results = {}
         
-        self.logger.info(f"Début collecte sentiment pour {len(symbols)} symboles")
+        self.logger.info(f"🚀 Début collecte sentiment pour {len(symbols)} symboles")
+        print(f"📁 Dossier de destination: {self.sentiment_folder}")
         
         for symbol in symbols:
-            self.logger.info(f"Collecte sentiment pour {symbol}")
+            self.logger.info(f"📊 Collecte sentiment pour {symbol}")
+            print(f"   ⏳ Traitement de {symbol}...")
             
             try:
                 # Collecter toutes les données en parallèle
@@ -497,6 +606,14 @@ class SentimentCollector:
                 # Calculer score composite
                 composite = self.calculate_composite_sentiment_score(news_av, news_fh, social_fh)
                 
+                # Sauvegarder le score composite
+                composite_data = {
+                    "symbol": symbol,
+                    "composite_sentiment": composite,
+                    "timestamp": datetime.now().isoformat()
+                }
+                await self._save_sentiment_data(composite_data, f"composite_sentiment_{symbol}")
+                
                 # Index Fear & Greed général (une seule fois par collecte)
                 if symbol == symbols[0]:  # Calculer seulement pour le premier symbole
                     fear_greed = await self.get_market_fear_greed_index()
@@ -515,43 +632,309 @@ class SentimentCollector:
                 
                 sentiment_label = composite.get('sentiment_label', 'Unknown')
                 confidence = composite.get('confidence', 0)
-                self.logger.info(f"Sentiment collecté pour {symbol}: {sentiment_label} (Confiance: {confidence:.2f})")
+                self.logger.info(f"✅ Sentiment collecté pour {symbol}: {sentiment_label} (Confiance: {confidence:.2f})")
+                print(f"   ✅ {symbol}: {sentiment_label} (Confiance: {confidence:.2f})")
                 
             except Exception as e:
-                self.logger.error(f"Erreur collecte sentiment {symbol}: {str(e)}")
+                self.logger.error(f"❌ Erreur collecte sentiment {symbol}: {str(e)}")
+                print(f"   ❌ Erreur pour {symbol}: {str(e)}")
                 results[symbol] = {
                     "error": str(e),
                     "collection_timestamp": datetime.now().isoformat()
                 }
         
-        self.logger.info(f"Collecte sentiment terminée pour {len(results)} symboles")
+        # Sauvegarder le rapport complet
+        await self._save_comprehensive_report(results)
+        
+        self.logger.info(f"🎉 Collecte sentiment terminée pour {len(results)} symboles")
+        print(f"🎉 Collecte terminée! Fichiers sauvegardés dans: {self.sentiment_folder}")
+        
         return results
     
-    def export_sentiment_data(self, data: dict, filename: str = None) -> str:
-        """Exporter les données de sentiment"""
-        if filename is None:
-            filename = f"sentiment_data_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
-        
-        # Créer le dossier si nécessaire
-        filepath = self.data_folder / filename
-        filepath.parent.mkdir(parents=True, exist_ok=True)
-        
+    async def _save_comprehensive_report(self, results: dict):
+        """Sauvegarder un rapport complet de toutes les données collectées"""
         try:
-            with open(filepath, 'w', encoding='utf-8') as f:
-                json.dump(data, f, indent=2, ensure_ascii=False, default=str)
+            timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+            filename = f"comprehensive_sentiment_report_{timestamp}.json"
+            filepath = self.sentiment_folder / filename
             
-            self.logger.info(f"Données de sentiment exportées vers: {filepath}")
-            return str(filepath)
+            # Préparer le rapport avec métadonnées
+            report = {
+                "collection_metadata": {
+                    "timestamp": datetime.now().isoformat(),
+                    "symbols_count": len(results),
+                    "symbols": list(results.keys()),
+                    "data_sources": list(self.sentiment_apis.keys()),
+                    "collection_duration": "N/A"  # Peut être calculé si nécessaire
+                },
+                "sentiment_data": results,
+                "summary": self._generate_collection_summary(results)
+            }
+            
+            # Sauvegarder le rapport
+            with open(filepath, 'w', encoding='utf-8') as f:
+                json.dump(report, f, indent=2, ensure_ascii=False, default=str)
+            
+            self.logger.info(f"📋 Rapport complet sauvegardé: {filepath}")
             
         except Exception as e:
-            self.logger.error(f"Erreur export données sentiment: {e}")
-            return ""
-
+            self.logger.error(f"❌ Erreur sauvegarde rapport complet: {e}")
+    
+    def _generate_collection_summary(self, results: dict) -> dict:
+        """Générer un résumé de la collecte"""
+        try:
+            summary = {
+                "total_symbols": len(results),
+                "successful_collections": 0,
+                "failed_collections": 0,
+                "sentiment_distribution": {"Bullish": 0, "Bearish": 0, "Neutral": 0},
+                "average_confidence": 0.0,
+                "data_source_success": {
+                    "alphavantage": 0,
+                    "finnhub_news": 0,
+                    "finnhub_social": 0,
+                    "trends": 0
+                }
+            }
+            
+            confidences = []
+            
+            for symbol, data in results.items():
+                if "error" not in data:
+                    summary["successful_collections"] += 1
+                    
+                    # Analyser le sentiment composite
+                    composite = data.get("composite_sentiment", {})
+                    if composite:
+                        label = composite.get("sentiment_label", "Neutral")
+                        if label in summary["sentiment_distribution"]:
+                            summary["sentiment_distribution"][label] += 1
+                        
+                        confidence = composite.get("confidence", 0)
+                        if confidence > 0:
+                            confidences.append(confidence)
+                    
+                    # Compter les sources de données réussies
+                    if not data.get("news_sentiment_alphavantage", {}).get("error"):
+                        summary["data_source_success"]["alphavantage"] += 1
+                    
+                    if not data.get("news_sentiment_finnhub", {}).get("error"):
+                        summary["data_source_success"]["finnhub_news"] += 1
+                    
+                    if not data.get("social_sentiment", {}).get("error"):
+                        summary["data_source_success"]["finnhub_social"] += 1
+                    
+                    if not data.get("sentiment_trends", {}).get("error"):
+                        summary["data_source_success"]["trends"] += 1
+                        
+                else:
+                    summary["failed_collections"] += 1
+            
+            # Calculer la confiance moyenne
+            if confidences:
+                summary["average_confidence"] = float(np.mean(confidences))
+            
+            return summary
+            
+        except Exception as e:
+            self.logger.error(f"Erreur génération résumé: {e}")
+            return {"error": str(e)}
+    
     def collect(self, symbols: List[str] = None):
         """Méthode principale de collecte synchrone - interface commune"""
         if symbols is None:
             symbols = ["AAPL", "MSFT", "GOOGL", "AMZN", "TSLA"]
         
+        print(f"🚀 Démarrage de la collecte de sentiment pour {len(symbols)} symboles")
+        print(f"📁 Dossier de destination: {self.sentiment_folder}")
+        
         # Exécuter la collecte asynchrone
         return asyncio.run(self.collect_comprehensive_sentiment(symbols))
+    
+    def get_latest_sentiment_data(self, symbol: str = None) -> dict:
+        """Récupérer les dernières données de sentiment sauvegardées"""
+        try:
+            if symbol:
+                # Chercher les fichiers pour un symbole spécifique
+                pattern = f"*{symbol}*.json"
+                files = list(self.sentiment_folder.glob(f"**/{pattern}"))
+            else:
+                # Chercher tous les fichiers de rapport complet
+                files = list(self.sentiment_folder.glob("comprehensive_sentiment_report_*.json"))
+            
+            if not files:
+                return {"error": f"Aucun fichier trouvé pour {symbol if symbol else 'rapport complet'}"}
+            
+            # Trouver le fichier le plus récent
+            latest_file = max(files, key=os.path.getctime)
+            
+            with open(latest_file, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+            
+            return {
+                "file_path": str(latest_file),
+                "data": data,
+                "last_modified": datetime.fromtimestamp(os.path.getctime(latest_file)).isoformat()
+            }
+            
+        except Exception as e:
+            self.logger.error(f"Erreur récupération données: {e}")
+            return {"error": str(e)}
+    
+    def list_available_data(self) -> dict:
+        """Lister toutes les données disponibles dans le dossier sentiment"""
+        try:
+            data_inventory = {
+                "daily": [],
+                "historical": [],
+                "composite": [],
+                "reports": []
+            }
+            
+            # Scanner chaque sous-dossier
+            for subfolder in ["daily", "historical", "composite"]:
+                folder_path = self.sentiment_folder / subfolder
+                if folder_path.exists():
+                    files = list(folder_path.glob("*.json"))
+                    for file in files:
+                        file_info = {
+                            "filename": file.name,
+                            "path": str(file),
+                            "size_kb": round(file.stat().st_size / 1024, 2),
+                            "created": datetime.fromtimestamp(file.stat().st_ctime).isoformat(),
+                            "modified": datetime.fromtimestamp(file.stat().st_mtime).isoformat()
+                        }
+                        data_inventory[subfolder].append(file_info)
+            
+            # Scanner les rapports complets
+            report_files = list(self.sentiment_folder.glob("comprehensive_sentiment_report_*.json"))
+            for file in report_files:
+                file_info = {
+                    "filename": file.name,
+                    "path": str(file),
+                    "size_kb": round(file.stat().st_size / 1024, 2),
+                    "created": datetime.fromtimestamp(file.stat().st_ctime).isoformat(),
+                    "modified": datetime.fromtimestamp(file.stat().st_mtime).isoformat()
+                }
+                data_inventory["reports"].append(file_info)
+            
+            # Statistiques générales
+            total_files = sum(len(files) for files in data_inventory.values())
+            total_size = sum(
+                sum(file["size_kb"] for file in files) 
+                for files in data_inventory.values()
+            )
+            
+            return {
+                "inventory": data_inventory,
+                "statistics": {
+                    "total_files": total_files,
+                    "total_size_kb": round(total_size, 2),
+                    "folder_structure": str(self.sentiment_folder)
+                }
+            }
+            
+        except Exception as e:
+            self.logger.error(f"Erreur inventaire données: {e}")
+            return {"error": str(e)}
+    
+    def cleanup_old_data(self, days_to_keep: int = 30) -> dict:
+        """Nettoyer les anciennes données (optionnel)"""
+        try:
+            cutoff_date = datetime.now() - timedelta(days=days_to_keep)
+            cutoff_timestamp = cutoff_date.timestamp()
+            
+            deleted_files = []
+            total_size_freed = 0
+            
+            # Scanner tous les fichiers JSON
+            for json_file in self.sentiment_folder.glob("**/*.json"):
+                if json_file.stat().st_mtime < cutoff_timestamp:
+                    size_kb = json_file.stat().st_size / 1024
+                    deleted_files.append({
+                        "filename": json_file.name,
+                        "path": str(json_file),
+                        "size_kb": round(size_kb, 2)
+                    })
+                    total_size_freed += size_kb
+                    json_file.unlink()  # Supprimer le fichier
+            
+            self.logger.info(f"🧹 Nettoyage terminé: {len(deleted_files)} fichiers supprimés")
+            
+            return {
+                "files_deleted": len(deleted_files),
+                "size_freed_kb": round(total_size_freed, 2),
+                "deleted_files": deleted_files,
+                "cutoff_date": cutoff_date.isoformat()
+            }
+            
+        except Exception as e:
+            self.logger.error(f"Erreur nettoyage données: {e}")
+            return {"error": str(e)}
 
+
+# =============================================================================
+# FONCTION PRINCIPALE POUR TESTER LA COLLECTE
+# =============================================================================
+async def main():
+    """Fonction principale pour tester le collecteur"""
+    print("=" * 60)
+    print("🚀 SENTIMENT COLLECTOR - NASDAQ IA TRADING")
+    print("=" * 60)
+    
+    # Initialiser le collecteur
+    collector = SentimentCollector()
+    
+    # Symboles à analyser
+    symbols = ["AAPL", "MSFT", "GOOGL", "AMZN", "TSLA"]
+    
+    try:
+        # Collecter les données
+        results = await collector.collect_comprehensive_sentiment(symbols)
+        
+        # Afficher un résumé
+        print(f"\n📊 RÉSUMÉ DE LA COLLECTE:")
+        print(f"   • Symboles traités: {len(results)}")
+        
+        for symbol, data in results.items():
+            if "error" not in data:
+                composite = data.get("composite_sentiment", {})
+                sentiment = composite.get("sentiment_label", "Unknown")
+                confidence = composite.get("confidence", 0)
+                print(f"   • {symbol}: {sentiment} (Confiance: {confidence:.2f})")
+            else:
+                print(f"   • {symbol}: ERREUR - {data.get('error', 'Unknown')}")
+        
+        # Afficher l'inventaire des fichiers
+        print(f"\n📁 FICHIERS CRÉÉS:")
+        inventory = collector.list_available_data()
+        stats = inventory.get("statistics", {})
+        print(f"   • Total fichiers: {stats.get('total_files', 0)}")
+        print(f"   • Taille totale: {stats.get('total_size_kb', 0)} KB")
+        print(f"   • Dossier: {collector.sentiment_folder}")
+        
+        return results
+        
+    except Exception as e:
+        print(f"❌ Erreur lors de la collecte: {e}")
+        return {}
+
+
+# =============================================================================
+# FONCTION SYNCHRONE POUR COMPATIBILITÉ
+# =============================================================================
+def run_sentiment_collection(symbols: List[str] = None):
+    """Fonction synchrone pour lancer la collecte"""
+    if symbols is None:
+        symbols = ["AAPL", "MSFT", "GOOGL", "AMZN", "TSLA"]
+    
+    collector = SentimentCollector()
+    return collector.collect(symbols)
+
+
+# =============================================================================
+# POINT D'ENTRÉE POUR EXÉCUTION DIRECTE
+# =============================================================================
+if __name__ == "__main__":
+    # Exécuter la collecte de test
+    asyncio.run(main())

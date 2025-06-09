@@ -1,0 +1,14 @@
+{
+  "symbol": "MSFT",
+  "composite_sentiment": {
+    "composite_score": 0.1868767767470625,
+    "sentiment_label": "Bullish",
+    "confidence": 0.1868767767470625,
+    "components": {
+      "alphavantage_news": 0.21770199999999998,
+      "finnhub_news": 0.1457764790764791
+    },
+    "data_sources": 2
+  },
+  "timestamp": "2025-06-09T12:44:30.594572"
+}
